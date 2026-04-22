@@ -11,3 +11,7 @@ database_id = "2e128980-9cfb-4fe0-9526-c9b6880f2a1d"
 # Local development configuration
 [vars]
 ENVIRONMENT = "local"
+
+# JWT Secret for authentication (CHANGE THIS IN PRODUCTION!)
+# Generate a secure random string: openssl rand -base64 32
+JWT_SECRET = "change-this-to-a-secure-random-secret-in-production"

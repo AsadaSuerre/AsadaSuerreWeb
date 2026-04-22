@@ -85,3 +85,14 @@ CREATE TABLE IF NOT EXISTS about_content (
   title TEXT NOT NULL,
   content TEXT NOT NULL
 );
+
+-- Admin users table for authentication
+CREATE TABLE IF NOT EXISTS admins (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Unique constraint on username
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_username ON admins(username);

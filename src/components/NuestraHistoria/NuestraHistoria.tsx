@@ -13,8 +13,14 @@ import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import { DataService } from '../../services/dataService';
 import { iconMap } from '../GenericCard/GenericCard';
+import { useAuth } from '../../context/AuthContext';
 import './NuestraHistoria.scss';
 
 // Hook for number animation
@@ -105,6 +111,7 @@ export default function NuestraHistoria() {
   const [mission, setMission] = React.useState<{ title: string; content: string } | null>(null);
   const [vision, setVision] = React.useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const { isAuthenticated } = useAuth();
 
   React.useEffect(() => {
     async function loadData() {
@@ -128,6 +135,30 @@ export default function NuestraHistoria() {
     loadData();
   }, []);
 
+  const handleDeleteTimelineItem = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este hito?')) return;
+    
+    try {
+      await DataService.deleteTimelineItem(id);
+      const updatedTimeline = await DataService.getTimeItemsData();
+      setTimelineData(updatedTimeline);
+    } catch (error) {
+      alert('Error al eliminar: ' + (error as Error).message);
+    }
+  };
+
+  const handleEditTimelineItem = (item: any) => {
+    alert('Función de edición en desarrollo');
+  };
+
+  const handleAddTimelineItem = () => {
+    alert('Función de agregar en desarrollo');
+  };
+
+  const handleEditStats = () => {
+    alert('Función de edición de estadísticas en desarrollo');
+  };
+
   if (loading) {
     return <Box sx={{ textAlign: 'center', py: 8 }}>Loading...</Box>;
   }
@@ -143,23 +174,46 @@ export default function NuestraHistoria() {
       }}
     >
       {/* Statistics Section */}
-      <Grid container spacing={3} sx={{ mb: 6 }}>
-        {statsData.map((stat, index) => (
-          <Grid key={index} size={{ xs: 6, md: 3 }}>
-            <StatCard number={stat.number} label={stat.label} />
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ position: 'relative' }}>
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          {statsData.map((stat, index) => (
+            <Grid key={index} size={{ xs: 6, md: 3 }}>
+              <StatCard number={stat.number} label={stat.label} />
+            </Grid>
+          ))}
+        </Grid>
+        {isAuthenticated && (
+          <IconButton
+            sx={{ position: 'absolute', top: 0, right: 0 }}
+            onClick={handleEditStats}
+            color="primary"
+          >
+            <EditIcon />
+          </IconButton>
+        )}
+      </Box>
 
       {/* Timeline Section */}
-      <Paper elevation={2} sx={{ p: 4, mb: 6 }}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ textAlign: "center", mb: 4 }}
-        >
-          Hitos Importantes
-        </Typography>
+      <Paper elevation={2} sx={{ p: 4, mb: 6, position: 'relative' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography
+            variant="h4"
+            gutterBottom
+            sx={{ textAlign: "center", mb: 0 }}
+          >
+            Hitos Importantes
+          </Typography>
+          {isAuthenticated && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddTimelineItem}
+              size="small"
+            >
+              Agregar Hito
+            </Button>
+          )}
+        </Box>
         <Timeline position="alternate">
           {timelineData.map((item: any, index) => (
             <TimelineItem key={index}>
@@ -171,39 +225,67 @@ export default function NuestraHistoria() {
                 <TimelineConnector />
               </TimelineSeparator>
               <TimelineContent sx={{ py: "12px", px: 2 }}>
-                <Paper elevation={1} sx={{ p: 2, backgroundColor: "grey.50" }}>
-                  {item.image && (
+                <Box sx={{ position: 'relative' }}>
+                  <Paper elevation={1} sx={{ p: 2, backgroundColor: "grey.50" }}>
+                    {item.image && (
+                      <Box
+                        component="img"
+                        src={item.image}
+                        alt={item.title}
+                        sx={{
+                          width: '100%',
+                          height: '150px',
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          mb: 2
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      color="primary"
+                      sx={{ fontWeight: "bold", display: "block", mb: 1 }}
+                    >
+                      {item.year}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      component="h3"
+                      sx={{ fontWeight: "bold" }}
+                    >
+                      {item.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {item.description}
+                    </Typography>
+                  </Paper>
+                  {isAuthenticated && (
                     <Box
-                      component="img"
-                      src={item.image}
-                      alt={item.title}
                       sx={{
-                        width: '100%',
-                        height: '150px',
-                        objectFit: 'cover',
-                        borderRadius: 1,
-                        mb: 2
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        display: 'flex',
+                        gap: 0.5,
                       }}
-                    />
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditTimelineItem(item)}
+                        sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteTimelineItem(String(item.id))}
+                        sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   )}
-                  <Typography
-                    variant="caption"
-                    color="primary"
-                    sx={{ fontWeight: "bold", display: "block", mb: 1 }}
-                  >
-                    {item.year}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    component="h3"
-                    sx={{ fontWeight: "bold" }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {item.description}
-                  </Typography>
-                </Paper>
+                </Box>
               </TimelineContent>
             </TimelineItem>
           ))}

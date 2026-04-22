@@ -1,9 +1,10 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
-// Generic fetch wrapper
+// Generic fetch wrapper with auth support
 async function apiFetch<T>(
   endpoint: string,
-  options?: RequestInit
+  options: RequestInit = {},
+  requireAuth: boolean = false
 ): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     headers: {
@@ -136,53 +137,53 @@ function transformTimelineItems(items: TimelineItem[]): any[] {
 export const DataService = {
   // Cards
   getCardsData: async (): Promise<any[]> => {
-    const cards = await apiFetch<Card[]>('/cards');
+    const cards = await apiFetch<Card[]>('/cards', {}, false);
     return transformCards(cards);
   },
   
   getNewsData: async (): Promise<any[]> => {
-    const cards = await apiFetch<Card[]>('/cards?variant=news');
+    const cards = await apiFetch<Card[]>('/cards?variant=news', {}, false);
     return transformCards(cards);
   },
   
   getServiceData: async (): Promise<any[]> => {
-    const cards = await apiFetch<Card[]>('/cards?variant=service');
+    const cards = await apiFetch<Card[]>('/cards?variant=service', {}, false);
     return transformCards(cards);
   },
   
   getGovernanceData: async (): Promise<any[]> => {
-    const cards = await apiFetch<Card[]>('/cards?variant=governance');
+    const cards = await apiFetch<Card[]>('/cards?variant=governance', {}, false);
     return transformCards(cards);
   },
   
   getContactData: async (): Promise<any[]> => {
-    const cards = await apiFetch<Card[]>('/cards?variant=contact');
+    const cards = await apiFetch<Card[]>('/cards?variant=contact', {}, false);
     return transformCards(cards);
   },
   
   // Home slides
   getHomeData: async (): Promise<any[]> => {
-    const slides = await apiFetch<HomeSlide[]>('/home-slides');
+    const slides = await apiFetch<HomeSlide[]>('/home-slides', {}, false);
     return transformHomeSlides(slides);
   },
   
   getCarouselImages: async (): Promise<any[]> => {
-    const slides = await apiFetch<HomeSlide[]>('/home-slides');
+    const slides = await apiFetch<HomeSlide[]>('/home-slides', {}, false);
     return transformHomeSlides(slides);
   },
   
   // Timeline
   getTimeItemsData: async (): Promise<any[]> => {
-    const items = await apiFetch<TimelineItem[]>('/timeline');
+    const items = await apiFetch<TimelineItem[]>('/timeline', {}, false);
     return transformTimelineItems(items);
   },
   
   // Stats and About
   getUsData: async (): Promise<UsData> => {
     const [stats, mission, vision] = await Promise.all([
-      apiFetch<Stat[]>('/stats'),
-      apiFetch<AboutContent>('/about/mission'),
-      apiFetch<AboutContent>('/about/vision')
+      apiFetch<Stat[]>('/stats', {}, false),
+      apiFetch<AboutContent>('/about/mission', {}, false),
+      apiFetch<AboutContent>('/about/vision', {}, false)
     ]);
     
     return {
@@ -194,7 +195,7 @@ export const DataService = {
   
   getStatsData: async (): Promise<Stat[] | undefined> => {
     try {
-      return await apiFetch<Stat[]>('/stats');
+      return await apiFetch<Stat[]>('/stats', {}, false);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
       return undefined;
@@ -203,7 +204,7 @@ export const DataService = {
   
   getMission: async () => {
     try {
-      const mission = await apiFetch<AboutContent>('/about/mission');
+      const mission = await apiFetch<AboutContent>('/about/mission', {}, false);
       return { title: mission.title, content: mission.content };
     } catch (error) {
       console.error('Failed to fetch mission:', error);
@@ -213,7 +214,7 @@ export const DataService = {
   
   getVision: async () => {
     try {
-      const vision = await apiFetch<AboutContent>('/about/vision');
+      const vision = await apiFetch<AboutContent>('/about/vision', {}, false);
       return { title: vision.title, content: vision.content };
     } catch (error) {
       console.error('Failed to fetch vision:', error);
@@ -223,12 +224,12 @@ export const DataService = {
   
   // Contacts
   getContactsData: async (): Promise<Contacts> => {
-    return await apiFetch<Contacts>('/contacts');
+    return await apiFetch<Contacts>('/contacts', {}, false);
   },
   
   getWhatsAppPhoneInfo: async (): Promise<string | undefined> => {
     try {
-      const contacts = await apiFetch<Contacts>('/contacts');
+      const contacts = await apiFetch<Contacts>('/contacts', {}, false);
       return contacts.whatsapp_phone_info;
     } catch (error) {
       console.error('Failed to fetch contact info:', error);
@@ -238,7 +239,7 @@ export const DataService = {
   
   getWhatsAppPhoneSupport: async (): Promise<string | undefined> => {
     try {
-      const contacts = await apiFetch<Contacts>('/contacts');
+      const contacts = await apiFetch<Contacts>('/contacts', {}, false);
       return contacts.whatsapp_phone_support;
     } catch (error) {
       console.error('Failed to fetch contact support:', error);
@@ -248,11 +249,127 @@ export const DataService = {
   
   getFacebookUrl: async (): Promise<string | undefined> => {
     try {
-      const contacts = await apiFetch<Contacts>('/contacts');
+      const contacts = await apiFetch<Contacts>('/contacts', {}, false);
       return contacts.facebook_url;
     } catch (error) {
       console.error('Failed to fetch Facebook URL:', error);
       return undefined;
     }
+  },
+
+  // ==================== AUTH METHODS ====================
+
+  login: async (username: string, password: string) => {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Login failed');
+    }
+
+    return response.json();
+  },
+
+  logout: async () => {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    localStorage.removeItem('auth_token');
+  },
+
+  getCurrentUser: async () => {
+    return apiFetch('/auth/me', {}, true);
+  },
+
+  // ==================== PROTECTED WRITE METHODS ====================
+
+  createCard: async (cardData: any) => {
+    return apiFetch('/cards', {
+      method: 'POST',
+      body: JSON.stringify(cardData),
+    }, true);
+  },
+
+  updateCard: async (id: string, cardData: any) => {
+    return apiFetch(`/cards/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cardData),
+    }, true);
+  },
+
+  deleteCard: async (id: string) => {
+    return apiFetch(`/cards/${id}`, {
+      method: 'DELETE',
+    }, true);
+  },
+
+  createHomeSlide: async (slideData: any) => {
+    return apiFetch('/home-slides', {
+      method: 'POST',
+      body: JSON.stringify(slideData),
+    }, true);
+  },
+
+  updateHomeSlide: async (id: string, slideData: any) => {
+    return apiFetch(`/home-slides/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(slideData),
+    }, true);
+  },
+
+  deleteHomeSlide: async (id: string) => {
+    return apiFetch(`/home-slides/${id}`, {
+      method: 'DELETE',
+    }, true);
+  },
+
+  createTimelineItem: async (itemData: any) => {
+    return apiFetch('/timeline', {
+      method: 'POST',
+      body: JSON.stringify(itemData),
+    }, true);
+  },
+
+  updateTimelineItem: async (id: string, itemData: any) => {
+    return apiFetch(`/timeline/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(itemData),
+    }, true);
+  },
+
+  deleteTimelineItem: async (id: string) => {
+    return apiFetch(`/timeline/${id}`, {
+      method: 'DELETE',
+    }, true);
+  },
+
+  updateStats: async (statsData: any[]) => {
+    return apiFetch('/stats', {
+      method: 'PUT',
+      body: JSON.stringify(statsData),
+    }, true);
+  },
+
+  updateAboutContent: async (type: string, contentData: any) => {
+    return apiFetch(`/about/${type}`, {
+      method: 'PUT',
+      body: JSON.stringify(contentData),
+    }, true);
+  },
+
+  updateContacts: async (contactsData: any) => {
+    return apiFetch('/contacts', {
+      method: 'PUT',
+      body: JSON.stringify(contactsData),
+    }, true);
   },
 };

@@ -1,5 +1,14 @@
+import {
+  hashPassword,
+  verifyPassword,
+  createToken,
+  verifyToken,
+  generatePayload,
+} from './auth';
+
 interface Env {
   asada_suerre_db: D1Database;
+  JWT_SECRET: string;
 }
 
 // Helper function to parse JSON body
@@ -77,6 +86,114 @@ function mapCardWithRelations(rows: any[]): any[] {
   }
 
   return Array.from(cardMap.values());
+}
+
+// ==================== AUTHENTICATION ENDPOINTS ====================
+
+// POST /auth/login
+async function login(request: Request, env: Env): Promise<Response> {
+  const body = await parseBody(request);
+
+  if (!body || !body.username || !body.password) {
+    return errorResponse('Missing required fields: username, password', 400);
+  }
+
+  try {
+    // Find admin by username
+    const admin = await env.asada_suerre_db.prepare(
+      'SELECT id, username, password_hash FROM admins WHERE username = ?'
+    ).bind(body.username).first();
+
+    if (!admin) {
+      return errorResponse('Invalid credentials', 401);
+    }
+
+    // Verify password
+    const isValid = await verifyPassword(body.password, admin.password_hash as string);
+    if (!isValid) {
+      return errorResponse('Invalid credentials', 401);
+    }
+
+    // Generate JWT token
+    const payload = generatePayload(String(admin.id), admin.username as string);
+    const token = await createToken(payload, env.JWT_SECRET);
+
+    return jsonResponse({
+      token,
+      user: {
+        id: admin.id,
+        username: admin.username,
+      },
+    });
+  } catch (error: any) {
+    return errorResponse(error.message, 500);
+  }
+}
+
+// POST /auth/logout
+async function logout(): Promise<Response> {
+  // For stateless JWT, logout is handled client-side by removing the token
+  return jsonResponse({ success: true, message: 'Logged out successfully' });
+}
+
+// GET /auth/me
+async function getCurrentUser(request: Request, env: Env): Promise<Response> {
+  const authHeader = request.headers.get('Authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return errorResponse('No token provided', 401);
+  }
+
+  const token = authHeader.substring(7);
+  const payload = await verifyToken(token, env.JWT_SECRET);
+
+  if (!payload) {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  try {
+    const admin = await env.asada_suerre_db.prepare(
+      'SELECT id, username, created_at FROM admins WHERE id = ?'
+    ).bind(payload.sub).first();
+
+    if (!admin) {
+      return errorResponse('User not found', 404);
+    }
+
+    return jsonResponse({
+      id: admin.id,
+      username: admin.username,
+      created_at: admin.created_at,
+    });
+  } catch (error: any) {
+    return errorResponse(error.message, 500);
+  }
+}
+
+// ==================== AUTH MIDDLEWARE ====================
+
+/**
+ * Middleware to check if request is authenticated
+ * Returns the user payload if authenticated, null otherwise
+ */
+async function authenticateRequest(request: Request, env: Env): Promise<{ userId: string; username: string } | null> {
+  const authHeader = request.headers.get('Authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  const payload = await verifyToken(token, env.JWT_SECRET);
+
+  if (!payload) {
+    return null;
+  }
+
+  return {
+    userId: payload.sub,
+    username: payload.username,
+  };
 }
 
 // ==================== CARDS ENDPOINTS ====================
@@ -197,6 +314,11 @@ async function createCard(request: Request, env: Env): Promise<Response> {
 
 // PUT /cards/:id
 async function updateCard(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body) {
@@ -297,14 +419,17 @@ async function updateCard(request: Request, env: Env, id: string): Promise<Respo
 
 // DELETE /cards/:id
 async function deleteCard(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   try {
-    const result = await env.asada_suerre_db.prepare('DELETE FROM cards WHERE id = ?').bind(id).run();
+    await env.asada_suerre_db.prepare('DELETE FROM card_authors WHERE card_id = ?').bind(id).run();
+    await env.asada_suerre_db.prepare('DELETE FROM card_items WHERE card_id = ?').bind(id).run();
+    await env.asada_suerre_db.prepare('DELETE FROM cards WHERE id = ?').bind(id).run();
 
-    if (result.meta.changes === 0) {
-      return errorResponse('Card not found', 404);
-    }
-
-    return jsonResponse({ success: true, message: 'Card deleted' });
+    return jsonResponse({ success: true, message: 'Card deleted successfully' });
   } catch (error: any) {
     return errorResponse(error.message, 500);
   }
@@ -316,19 +441,20 @@ async function deleteCard(request: Request, env: Env, id: string): Promise<Respo
 async function getContacts(env: Env): Promise<Response> {
   const result = await env.asada_suerre_db.prepare('SELECT * FROM contacts WHERE id = 1').first();
 
-  if (!result) {
-    return errorResponse('Contacts not found', 404);
-  }
-
-  return jsonResponse(result);
+  return jsonResponse(result || {});
 }
 
 // PUT /contacts
 async function updateContacts(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body) {
-    return errorResponse('Missing request body');
+    return errorResponse('Missing request body', 400);
   }
 
   try {
@@ -358,6 +484,11 @@ async function getHomeSlides(env: Env): Promise<Response> {
 
 // POST /home-slides
 async function createHomeSlide(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body || !body.image || !body.title || !body.description) {
@@ -387,6 +518,11 @@ async function createHomeSlide(request: Request, env: Env): Promise<Response> {
 
 // PUT /home-slides/:id
 async function updateHomeSlide(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body) {
@@ -436,7 +572,12 @@ async function updateHomeSlide(request: Request, env: Env, id: string): Promise<
 }
 
 // DELETE /home-slides/:id
-async function deleteHomeSlide(env: Env, id: string): Promise<Response> {
+async function deleteHomeSlide(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   try {
     const result = await env.asada_suerre_db.prepare('DELETE FROM home_slides WHERE id = ?').bind(id).run();
 
@@ -461,6 +602,11 @@ async function getTimeline(env: Env): Promise<Response> {
 
 // POST /timeline
 async function createTimelineItem(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body || !body.year || !body.title || !body.description) {
@@ -491,6 +637,11 @@ async function createTimelineItem(request: Request, env: Env): Promise<Response>
 
 // PUT /timeline/:id
 async function updateTimelineItem(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body) {
@@ -544,7 +695,12 @@ async function updateTimelineItem(request: Request, env: Env, id: string): Promi
 }
 
 // DELETE /timeline/:id
-async function deleteTimelineItem(env: Env, id: string): Promise<Response> {
+async function deleteTimelineItem(request: Request, env: Env, id: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   try {
     const result = await env.asada_suerre_db.prepare('DELETE FROM timeline_items WHERE id = ?').bind(id).run();
 
@@ -569,6 +725,11 @@ async function getStats(env: Env): Promise<Response> {
 
 // PUT /stats (bulk replace)
 async function updateStats(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body || !Array.isArray(body)) {
@@ -619,6 +780,11 @@ async function getAboutContentByType(env: Env, type: string): Promise<Response> 
 
 // PUT /about/:type (upsert)
 async function upsertAboutContent(request: Request, env: Env, type: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
   const body = await parseBody(request);
 
   if (!body || !body.title || !body.content) {
@@ -659,6 +825,17 @@ export default {
       });
     }
 
+    // ==================== AUTH ROUTES ====================
+    if (path === '/auth/login' && method === 'POST') {
+      return login(request, env);
+    }
+    if (path === '/auth/logout' && method === 'POST') {
+      return logout();
+    }
+    if (path === '/auth/me' && method === 'GET') {
+      return getCurrentUser(request, env);
+    }
+
     // ==================== CARDS ROUTES ====================
     if (path === '/cards' && method === 'GET') {
       return getCards(request, env);
@@ -696,7 +873,7 @@ export default {
     }
     if (path.startsWith('/home-slides/') && method === 'DELETE') {
       const id = path.split('/')[2];
-      return deleteHomeSlide(env, id);
+      return deleteHomeSlide(request, env, id);
     }
 
     // ==================== TIMELINE ROUTES ====================

@@ -14,6 +14,7 @@ import {
   ScrollToTop
 } from './components';
 import GlobalDialog from './components/FullScreenDialog/GlobalDialog';
+import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
 function AppContent() {
@@ -42,8 +43,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <GlobalDialog>
-      <AppContent />
-    </GlobalDialog>
+    <AuthProvider>
+      <GlobalDialog>
+        <AppContent />
+      </GlobalDialog>
+    </AuthProvider>
   );
 }

@@ -13,6 +13,9 @@ import { ReactComponent as LogoAsada } from '../../assets/asada-suerre-logo.svg'
 import { useNavigate, useLocation } from 'react-router-dom';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
 import { DataService } from '../../services/dataService';
+import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import { LoginDialogContent } from '../LoginDialog';
 // Import carousel images for mapping
 import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
 import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
@@ -40,9 +43,23 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 export default function AppBarComponent() {
   const [open, setOpen] = React.useState(false);
-  const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
+  const { isAuthenticated, user, logout } = useAuth();  const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
+  const { openDialog, closeDialog } = useDialog();
+
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation();;
+
+  const handleLoginClick = () => {
+    openDialog({
+      title: 'Portal Administrativo',
+      content: <LoginDialogContent onSuccess={closeDialog} />,
+      maxWidth: 'sm',
+    });
+  };
+
+  const handleLogoutClick = () => {
+    logout();
+  }
 
   // Determine if carousel should be collapsed (not on base path)
   const isCarouselCollapsed = location.pathname !== '/' && location.pathname !== '';
@@ -249,8 +266,13 @@ export default function AppBarComponent() {
             >
               Contactos
             </Button>
-            <Button color="primary" variant="contained" size="small">
-              Portal Administrativo
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
+            >
+              {isAuthenticated ? `Cerrar Sesión (${user?.username})` : 'Portal Administrativo'}
             </Button>
           </Box>
           <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1 }}>
@@ -310,8 +332,13 @@ export default function AppBarComponent() {
                 </MenuItem>
                 <Divider sx={{ my: 3 }} />
                 <MenuItem>
-                  <Button color="secondary" variant="contained" fullWidth>
-                    Portal Administrativo
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    fullWidth
+                    onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
+                  >
+                    {isAuthenticated ? `Cerrar Sesión (${user?.username})` : 'Portal Administrativo'}
                   </Button>
                 </MenuItem>
               </Box>
