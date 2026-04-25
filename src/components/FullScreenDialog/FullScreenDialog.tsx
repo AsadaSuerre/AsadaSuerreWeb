@@ -66,6 +66,8 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           component="img"
           src={image}
           alt={title || 'Dialog header'}
+          loading="lazy"
+          decoding="async"
           sx={{
             width: '100%',
             height: '200px',

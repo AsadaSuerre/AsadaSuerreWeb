@@ -232,6 +232,8 @@ export default function NuestraHistoria() {
                         component="img"
                         src={item.image}
                         alt={item.title}
+                        loading="lazy"
+                        decoding="async"
                         sx={{
                           width: '100%',
                           height: '150px',

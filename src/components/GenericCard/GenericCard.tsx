@@ -12,6 +12,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
 import GroupsIcon from '@mui/icons-material/Groups';
 import GavelIcon from '@mui/icons-material/Gavel';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -23,7 +24,10 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useDialog } from '../index';
+import { memo, useCallback } from 'react';
 import './GenericCard.scss';
 
 // Types for different card variants
@@ -55,6 +59,9 @@ export interface GenericCardProps {
   className?: string;
   hideImage?: boolean;
   customContent?: React.ReactNode;
+  showEditControls?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 // Styled components based on Noticias structure
@@ -64,7 +71,9 @@ const StyledCard = styled(Card)<{ cardvariant?: string }>(({ theme, cardvariant 
   padding: 0,
   height: '100%',
   backgroundColor: (theme.vars || theme).palette.background.paper,
-  transition: 'all 0.3s ease-in-out',
+  transition: cardvariant === 'service' || cardvariant === 'governance' 
+    ? 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out'
+    : 'none',
   '&:hover': {
     backgroundColor: 'transparent',
     cursor: 'pointer',
@@ -134,20 +143,6 @@ const Author: React.FC<{ authors: { name: string; avatar: string }[] }> = ({ aut
   );
 };
 
-// Icon mapping for string-based icon names
-export const iconMap: { [key: string]: React.ReactNode } = {
-  Groups: <GroupsIcon />,
-  Gavel: <GavelIcon />,
-  AccountBalance: <AccountBalanceIcon />,
-  Description: <DescriptionIcon />,
-  Assignment: <AssignmentIcon />,
-  Payment: <PaymentIcon />,
-  Receipt: <ReceiptIcon />,
-  WaterDrop: <WaterDropIcon />,
-  Phone: <PhoneIcon />,
-  Email: <EmailIcon />,
-  LocationOn: <LocationOnIcon />
-};
 
 // Icon component for service/governance cards
 const CardIcon: React.FC<{ icon?: string; variant?: string }> = ({ icon, variant }) => {
@@ -172,6 +167,21 @@ const CardIcon: React.FC<{ icon?: string; variant?: string }> = ({ icon, variant
   );
 };
 
+// Icon mapping for string-based icon names
+export const iconMap: { [key: string]: React.ReactNode } = {
+  Groups: <GroupsIcon />,
+  Gavel: <GavelIcon />,
+  AccountBalance: <AccountBalanceIcon />,
+  Description: <DescriptionIcon />,
+  Assignment: <AssignmentIcon />,
+  Payment: <PaymentIcon />,
+  Receipt: <ReceiptIcon />,
+  WaterDrop: <WaterDropIcon />,
+  Phone: <PhoneIcon />,
+  Email: <EmailIcon />,
+  LocationOn: <LocationOnIcon />
+};
+
 const GenericCard: React.FC<GenericCardProps> = ({
   data,
   size = 'medium',
@@ -183,15 +193,18 @@ const GenericCard: React.FC<GenericCardProps> = ({
   className,
   hideImage = false,
   customContent,
+  showEditControls = false,
+  onEdit,
+  onDelete,
 }) => {
   const { openDialog } = useDialog();
   const variant = data.variant || 'default';
 
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     onFocus?.(parseInt(data.id));
-  };
+  }, [onFocus, data.id]);
 
-  const getDialogContent = () => {
+  const getDialogContent = useCallback(() => {
     switch (variant) {
       case 'news':
         return (
@@ -262,9 +275,9 @@ const GenericCard: React.FC<GenericCardProps> = ({
           </Box>
         );
     }
-  };
+  }, [variant, data.tag, data.authors, data.subtitle, data.description, data.items]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     // If googleMapsUrl exists, do nothing on click
     if (data.googleMapsUrl) {
       return;
@@ -300,31 +313,44 @@ const GenericCard: React.FC<GenericCardProps> = ({
       maxWidth: 'lg',
       fullWidth: true
     });
-  };
+  }, [data, onClick, openDialog, getDialogContent]);
 
-  const getImageHeight = () => {
+  const getImageHeight = useCallback(() => {
     switch (size) {
       case 'small': return 120;
       case 'large': return 240;
       default: return 180;
     }
-  };
+  }, [size]);
+
+  const handleEdit = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.();
+  }, [onEdit]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  }, [onDelete]);
 
   return (
-    <StyledCard
-      cardvariant={variant}
-      className={`${className || ''} ${focused ? 'Mui-focused' : ''}`}
-      onClick={handleCardClick}
-      onFocus={handleFocus}
-      onBlur={onBlur}
-      tabIndex={tabIndex}
-    >
-      {/* Card Media/Image */}
-      {data.image && !hideImage && variant === 'news' && (
+    <Box sx={{ position: 'relative' }}>
+      <StyledCard
+        cardvariant={variant}
+        className={`${className || ''} ${focused ? 'Mui-focused' : ''}`}
+        onClick={handleCardClick}
+        onFocus={handleFocus}
+        onBlur={onBlur}
+        tabIndex={tabIndex}
+      >
+        {/* Card Media/Image */}
+        {data.image && !hideImage && variant === 'news' && (
         <CardMedia
           component="img"
           alt={data.title}
           image={data.image}
+          loading="lazy"
+          decoding="async"
           sx={{
             aspectRatio: "16 / 9",
             borderBottom: "1px solid",
@@ -416,7 +442,38 @@ const GenericCard: React.FC<GenericCardProps> = ({
         )}
       </StyledCardContent>
     </StyledCard>
+    {/* Edit/Delete Controls */}
+    {showEditControls && (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          display: 'flex',
+          gap: 1,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: 1,
+          p: 0.5,
+        }}
+      >
+        <IconButton
+          size="small"
+          onClick={handleEdit}
+          sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={handleDelete}
+          sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Box>
+    )}
+    </Box>
   );
 };
 
-export default GenericCard;
+export default memo(GenericCard);

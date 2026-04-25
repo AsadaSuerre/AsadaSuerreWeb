@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Grid from '@mui/material/Grid';
-import { Box, Container, Button, IconButton } from '@mui/material';
+import { Box, Container, Button, Typography } from '@mui/material';
 import Chip from '@mui/material/Chip';
 import { DataService } from '../../services/dataService';
 import GenericCard from '../GenericCard/GenericCard';
@@ -8,8 +8,6 @@ import { GenericCardData } from '../GenericCard/GenericCard';
 import Search from '../Search/Search';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 // Import images directly
 import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
@@ -217,60 +215,52 @@ export default function Noticias() {
         </Box>
       </Box>
       <Grid container spacing={2} columns={12}>
-        {transformedNews.map((news, index) => (
-          <Grid key={news.id} size={{ xs: 12, md: 6 }}>
-            <Box sx={{ position: 'relative' }}>
-              <GenericCard
-                data={news}
-                focused={focusedCardIndex === index}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                tabIndex={0}
-                size="large"
-              />
-              {isAuthenticated && (
+        {isAuthenticated && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <GenericCard
+              data={{
+                id: 'add',
+                title: '',
+                variant: 'news',
+              }}
+              size="large"
+              onClick={handleAdd}
+              customContent={
                 <Box
                   sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
                     display: 'flex',
-                    gap: 1,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    borderRadius: 1,
-                    p: 0.5,
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 4,
                   }}
                 >
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEdit(filteredNews[index])}
-                    sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(String(news.id))}
-                    sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  <AddIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                    Agregar Noticia
+                  </Typography>
                 </Box>
-              )}
-            </Box>
+              }
+              hideImage
+            />
+          </Grid>
+        )}
+        {transformedNews.map((news, index) => (
+          <Grid key={news.id} size={{ xs: 12, md: 6 }}>
+            <GenericCard
+              data={news}
+              focused={focusedCardIndex === index}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              tabIndex={0}
+              size="large"
+              showEditControls={isAuthenticated}
+              onEdit={() => handleEdit(filteredNews[index])}
+              onDelete={() => handleDelete(String(news.id))}
+            />
           </Grid>
         ))}
       </Grid>
-      {isAuthenticated && (
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{ mt: 2, alignSelf: 'flex-start' }}
-        >
-          Agregar Noticia
-        </Button>
-      )}
     </Container>
   );
 }

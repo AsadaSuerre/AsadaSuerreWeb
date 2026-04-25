@@ -78,6 +78,7 @@ export default function AppBarComponent() {
       try {
         const images = await DataService.getCarouselImages();
         const transformed = images.map((item: any) => ({
+          id: item.id,
           image: imageMap[item.image] || item.image,
           title: item.title,
           subtitle: item.subtitle,
@@ -90,6 +91,33 @@ export default function AppBarComponent() {
     }
     loadCarouselImages();
   }, []);
+
+  const handleDeleteSlide = async (index: number, slide: any) => {
+    if (!confirm('¿Estás seguro de eliminar este slide?')) return;
+    
+    try {
+      await DataService.deleteHomeSlide(String(slide.id));
+      const updatedImages = await DataService.getCarouselImages();
+      const transformed = updatedImages.map((item: any) => ({
+        id: item.id,
+        image: imageMap[item.image] || item.image,
+        title: item.title,
+        subtitle: item.subtitle,
+        description: item.description
+      }));
+      setCarouselImages(transformed);
+    } catch (error) {
+      alert('Error al eliminar: ' + (error as Error).message);
+    }
+  };
+
+  const handleEditSlide = (index: number, slide: any) => {
+    alert('Función de edición en desarrollo');
+  };
+
+  const handleAddSlide = () => {
+    alert('Función de agregar slide en desarrollo');
+  };
 
   const toggleDrawer = (newOpen: boolean) => () => {
     if(!isCarouselCollapsed) {
@@ -136,6 +164,11 @@ export default function AppBarComponent() {
         autoPlay={true} 
         interval={4000} 
         collapsed={isCarouselCollapsed}
+        showEditControls={isAuthenticated}
+        currentPath={location.pathname}
+        onEdit={handleEditSlide}
+        onDelete={handleDeleteSlide}
+        onAdd={handleAddSlide}
         sx={{ 
           position: 'relative',
           zIndex: 0,

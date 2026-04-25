@@ -14,4 +14,4 @@ ENVIRONMENT = "local"
 
 # JWT Secret for authentication (CHANGE THIS IN PRODUCTION!)
 # Generate a secure random string: openssl rand -base64 32
-JWT_SECRET = "change-this-to-a-secure-random-secret-in-production"
+JWT_SECRET = "MA5hnxv5oz36ImjPAFZLQR4OlhLc57C6PNQeBHLfpg4="
