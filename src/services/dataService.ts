@@ -1,5 +1,35 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
+// Helper function to translate technical errors to user-friendly messages
+function getErrorMessage(error: any): string {
+  const errorMessage = error?.error || error?.message || 'Request failed';
+  
+  const errorMap: Record<string, string> = {
+    'Unauthorized': 'Sesión expirada. Por favor, inicie sesión nuevamente.',
+    'Forbidden': 'No tiene permisos para realizar esta acción.',
+    'Not Found': 'El recurso solicitado no existe.',
+    'Network Error': 'Error de conexión. Verifique su conexión a internet.',
+    'Token expired': 'Sesión expirada. Por favor, inicie sesión nuevamente.',
+    'Invalid token': 'Sesión inválida. Por favor, inicie sesión nuevamente.',
+    'auth failed': 'Error de autenticación. Por favor, inicie sesión nuevamente.',
+  };
+
+  // Check for exact match
+  if (errorMap[errorMessage]) {
+    return errorMap[errorMessage];
+  }
+
+  // Check for partial match
+  for (const [key, message] of Object.entries(errorMap)) {
+    if (errorMessage.toLowerCase().includes(key.toLowerCase())) {
+      return message;
+    }
+  }
+
+  // Return original error if no match found
+  return errorMessage;
+}
+
 // Generic fetch wrapper with auth support
 async function apiFetch<T>(
   endpoint: string,
@@ -17,17 +47,30 @@ async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers,
-    ...options,
-  });
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      headers,
+      ...options,
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Request failed');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(getErrorMessage(error));
+    }
+
+    return response.json();
+  } catch (error: any) {
+    // Handle network errors or JSON parsing errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Error de conexión. Verifique su conexión a internet.');
+    }
+    // If it's already our custom error, rethrow it
+    if (error.message && (error.message.includes('Sesión') || error.message.includes('permisos'))) {
+      throw error;
+    }
+    // Otherwise wrap it in a generic message
+    throw new Error(getErrorMessage(error));
   }
-
-  return response.json();
 }
 
 // Interfaces matching the API responses
@@ -104,6 +147,7 @@ export interface UsData {
 // Helper function to transform API response to match existing data structure
 function transformCards(cards: Card[]): any[] {
   return cards.map(card => ({
+    id: card.id,
     title: card.title,
     description: card.description,
     date: card.date,
@@ -135,6 +179,7 @@ function transformHomeSlides(slides: HomeSlide[]): any[] {
 
 function transformTimelineItems(items: TimelineItem[]): any[] {
   return items.map(item => ({
+    id: item.id,
     year: item.year,
     title: item.title,
     description: item.description,

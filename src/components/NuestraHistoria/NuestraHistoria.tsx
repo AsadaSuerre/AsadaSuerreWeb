@@ -21,6 +21,9 @@ import Button from '@mui/material/Button';
 import { DataService } from '../../services/dataService';
 import { iconMap } from '../GenericCard/GenericCard';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
+import Loading from '../Loading/Loading';
 import './NuestraHistoria.scss';
 
 // Hook for number animation
@@ -80,10 +83,20 @@ const useNumberAnimation = (end: string | number, duration: number = 1000) => {
 };
 
 // StatCard component to properly use the hook
-function StatCard({ number, label }: { number: string | number; label: string }) {
+function StatCard({ number, label, onEdit }: { number: string | number; label: string; onEdit?: () => void }) {
   const animatedNumber = useNumberAnimation(number);
+  const { isAuthenticated } = useAuth();
   return (
-    <Card className="stat-card" sx={{ textAlign: "center", py: 3 }}>
+    <Card className="stat-card" sx={{ textAlign: "center", py: 3, position: 'relative' }}>
+      {isAuthenticated && onEdit && (
+        <IconButton
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          onClick={onEdit}
+          color="primary"
+        >
+          <EditIcon />
+        </IconButton>
+      )}
       <CardContent>
         <Typography
           variant="h3"
@@ -112,6 +125,7 @@ export default function NuestraHistoria() {
   const [vision, setVision] = React.useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = React.useState(true);
   const { isAuthenticated } = useAuth();
+  const { openDialog, closeDialog } = useDialog();
 
   React.useEffect(() => {
     async function loadData() {
@@ -127,7 +141,8 @@ export default function NuestraHistoria() {
         setMission(missionData || null);
         setVision(visionData || null);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -148,19 +163,140 @@ export default function NuestraHistoria() {
   };
 
   const handleEditTimelineItem = (item: any) => {
-    alert('Función de edición en desarrollo');
+    openDialog({
+      title: 'Editar Evento del Historial',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateTimelineItem(String(item.id), data);
+              const updatedTimeline = await DataService.getTimeItemsData();
+              setTimelineData(updatedTimeline);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="timeline"
+          initialData={item}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const handleAddTimelineItem = () => {
-    alert('Función de agregar en desarrollo');
+    openDialog({
+      title: 'Agregar Evento del Historial',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createTimelineItem(data);
+              const updatedTimeline = await DataService.getTimeItemsData();
+              setTimelineData(updatedTimeline);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="timeline"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
-  const handleEditStats = () => {
-    alert('Función de edición de estadísticas en desarrollo');
+  const handleEditStats = (stat: any, index: number) => {
+    openDialog({
+      title: 'Editar Estadística',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const updatedStats = [...statsData];
+              updatedStats[index] = data;
+              await DataService.updateStats(updatedStats);
+              const newStats = await DataService.getStatsData();
+              setStatsData(newStats || []);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="stats"
+          initialData={stat}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'sm',
+      fullWidth: true
+    });
+  };
+
+  const handleEditMission = () => {
+    if (!mission) return;
+    openDialog({
+      title: 'Editar Misión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateAboutContent('mission', data);
+              const updatedMission = await DataService.getMission();
+              setMission(updatedMission || null);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="mission"
+          initialData={mission}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleEditVision = () => {
+    if (!vision) return;
+    openDialog({
+      title: 'Editar Visión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateAboutContent('vision', data);
+              const updatedVision = await DataService.getVision();
+              setVision(updatedVision || null);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="vision"
+          initialData={vision}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   if (loading) {
-    return <Box sx={{ textAlign: 'center', py: 8 }}>Loading...</Box>;
+    return <Loading />;
   }
 
   return (
@@ -174,23 +310,18 @@ export default function NuestraHistoria() {
       }}
     >
       {/* Statistics Section */}
-      <Box sx={{ position: 'relative' }}>
+      <Box>
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {statsData.map((stat, index) => (
             <Grid key={index} size={{ xs: 6, md: 3 }}>
-              <StatCard number={stat.number} label={stat.label} />
+              <StatCard 
+                number={stat.number} 
+                label={stat.label} 
+                onEdit={() => handleEditStats(stat, index)}
+              />
             </Grid>
           ))}
         </Grid>
-        {isAuthenticated && (
-          <IconButton
-            sx={{ position: 'absolute', top: 0, right: 0 }}
-            onClick={handleEditStats}
-            color="primary"
-          >
-            <EditIcon />
-          </IconButton>
-        )}
       </Box>
 
       {/* Timeline Section */}
@@ -296,7 +427,7 @@ export default function NuestraHistoria() {
 
       {/* Mission and Vision */}
       <Grid container spacing={4}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ position: 'relative' }}>
           <Card className="mission-card" sx={{ height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <Typography
@@ -311,8 +442,17 @@ export default function NuestraHistoria() {
               </Typography>
             </CardContent>
           </Card>
+          {isAuthenticated && (
+            <IconButton
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={handleEditMission}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ position: 'relative' }}>
           <Card className="vision-card" sx={{ height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <Typography
@@ -327,6 +467,15 @@ export default function NuestraHistoria() {
               </Typography>
             </CardContent>
           </Card>
+          {isAuthenticated && (
+            <IconButton
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={handleEditVision}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
         </Grid>
       </Grid>
     </Container>

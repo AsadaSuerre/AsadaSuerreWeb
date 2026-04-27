@@ -6,13 +6,17 @@ import { Typography } from '@mui/material';
 import GenericCard from '../GenericCard/GenericCard';
 import { DataService } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import './Gestiones.scss';
 
 export default function Gestiones() {
   const [gestionesData, setGestionesData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { isAuthenticated } = useAuth();
+  const { openDialog, closeDialog } = useDialog();
 
   React.useEffect(() => {
     async function loadData() {
@@ -20,7 +24,8 @@ export default function Gestiones() {
         const data = await DataService.getServiceData();
         setGestionesData(data);
       } catch (error) {
-        console.error('Failed to load gestiones:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -41,15 +46,59 @@ export default function Gestiones() {
   };
 
   const handleEdit = (item: any) => {
-    alert('Función de edición en desarrollo');
+    openDialog({
+      title: 'Editar Gestión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const itemId = item.id;
+              await DataService.updateCard(String(itemId), data);
+              const updatedData = await DataService.getServiceData();
+              setGestionesData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="service"
+          initialData={item}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const handleAdd = () => {
-    alert('Función de agregar en desarrollo');
+    openDialog({
+      title: 'Agregar Gestión',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createCard({ ...data, variant: 'service' });
+              const updatedData = await DataService.getServiceData();
+              setGestionesData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="service"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   if (loading) {
-    return <Box sx={{ textAlign: 'center', py: 8 }}>Loading...</Box>;
+    return <Loading />;
   }
 
   return (

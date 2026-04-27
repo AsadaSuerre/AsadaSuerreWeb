@@ -16,6 +16,7 @@ import { DataService } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
 import { LoginDialogContent } from '../LoginDialog';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 // Import carousel images for mapping
 import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
 import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
@@ -43,11 +44,11 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 export default function AppBarComponent() {
   const [open, setOpen] = React.useState(false);
-  const { isAuthenticated, user, logout } = useAuth();  const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
+  const { isAuthenticated, user, logout } = useAuth();
   const { openDialog, closeDialog } = useDialog();
-
+  const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
   const navigate = useNavigate();
-  const location = useLocation();;
+  const location = useLocation();
 
   const handleLoginClick = () => {
     openDialog({
@@ -59,7 +60,7 @@ export default function AppBarComponent() {
 
   const handleLogoutClick = () => {
     logout();
-  }
+  };
 
   // Determine if carousel should be collapsed (not on base path)
   const isCarouselCollapsed = location.pathname !== '/' && location.pathname !== '';
@@ -86,7 +87,8 @@ export default function AppBarComponent() {
         }));
         setCarouselImages(transformed);
       } catch (error) {
-        console.error('Failed to load carousel images:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
       }
     }
     loadCarouselImages();
@@ -112,11 +114,69 @@ export default function AppBarComponent() {
   };
 
   const handleEditSlide = (index: number, slide: any) => {
-    alert('Función de edición en desarrollo');
+    openDialog({
+      title: 'Editar Slide',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const slideId = slide.id;
+              await DataService.updateHomeSlide(String(slideId), data);
+              const updatedImages = await DataService.getCarouselImages();
+              const transformed = updatedImages.map((item: any) => ({
+                id: item.id,
+                image: imageMap[item.image] || item.image,
+                title: item.title,
+                subtitle: item.subtitle,
+                description: item.description
+              }));
+              setCarouselImages(transformed);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="carousel"
+          initialData={slide}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const handleAddSlide = () => {
-    alert('Función de agregar slide en desarrollo');
+    openDialog({
+      title: 'Agregar Slide',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createHomeSlide(data);
+              const updatedImages = await DataService.getCarouselImages();
+              const transformed = updatedImages.map((item: any) => ({
+                id: item.id,
+                image: imageMap[item.image] || item.image,
+                title: item.title,
+                subtitle: item.subtitle,
+                description: item.description
+              }));
+              setCarouselImages(transformed);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="carousel"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const toggleDrawer = (newOpen: boolean) => () => {

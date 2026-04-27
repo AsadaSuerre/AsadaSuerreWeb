@@ -26,7 +26,8 @@ const ContactsContainer: React.FC = () => {
         setWhatsappPhoneSupport(support || '');
         setFacebookUrl(fb || '');
       } catch (error) {
-        console.error('Failed to load contacts:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
       }
     }
     loadContacts();

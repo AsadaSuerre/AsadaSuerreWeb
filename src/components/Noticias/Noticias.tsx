@@ -8,7 +8,9 @@ import { GenericCardData } from '../GenericCard/GenericCard';
 import Search from '../Search/Search';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
+import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 // Import images directly
 import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
 import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
@@ -29,7 +31,7 @@ export default function Noticias() {
   const [cardsData, setCardsData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { isAuthenticated } = useAuth();
-  const { openDialog } = useDialog();
+  const { openDialog, closeDialog } = useDialog();
 
   React.useEffect(() => {
     async function loadData() {
@@ -37,7 +39,8 @@ export default function Noticias() {
         const data = await DataService.getCardsData();
         setCardsData(data);
       } catch (error) {
-        console.error('Failed to load cards:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -80,13 +83,55 @@ export default function Noticias() {
   };
 
   const handleEdit = (news: any) => {
-    // TODO: Open edit dialog with news data
-    alert('Función de edición en desarrollo');
+    openDialog({
+      title: 'Editar Noticia',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const newsId = news.id;
+              await DataService.updateCard(String(newsId), data);
+              const updatedData = await DataService.getCardsData();
+              setCardsData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="news"
+          initialData={news}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const handleAdd = () => {
-    // TODO: Open add dialog
-    alert('Función de agregar en desarrollo');
+    openDialog({
+      title: 'Agregar Noticia',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createCard({ ...data, variant: 'news' });
+              const updatedData = await DataService.getCardsData();
+              setCardsData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="news"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   // Image mapping object
@@ -120,7 +165,7 @@ export default function Noticias() {
   }, [cardsData, selectedCategory, searchQuery]);
 
   if (loading) {
-    return <Box sx={{ textAlign: 'center', py: 8 }}>Loading...</Box>;
+    return <Loading />;
   }
 
   // Transform news data to GenericCard format
@@ -255,7 +300,7 @@ export default function Noticias() {
               tabIndex={0}
               size="large"
               showEditControls={isAuthenticated}
-              onEdit={() => handleEdit(filteredNews[index])}
+              onEdit={() => handleEdit(news)}
               onDelete={() => handleDelete(String(news.id))}
             />
           </Grid>
