@@ -1,0 +1,17 @@
+name = "asada-suerre-api"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "asada_suerre_db"
+database_name = "asada-suerre-db"
+database_id = "2e128980-9cfb-4fe0-9526-c9b6880f2a1d"
+
+# Local development configuration
+[vars]
+ENVIRONMENT = "local"
+
+# JWT Secret for authentication (CHANGE THIS IN PRODUCTION!)
+# Generate a secure random string: openssl rand -base64 32
+JWT_SECRET = "SECRET_KEY"

@@ -39,9 +39,10 @@ export async function hashPassword(password: string): Promise<string> {
   const hash = await crypto.subtle.exportKey('raw', key);
   
   // Combine salt and hash for storage
-  const combined = new Uint8Array(salt.length + hash.byteLength);
+  const hashArray = new Uint8Array(hash as ArrayBuffer);
+  const combined = new Uint8Array(salt.length + hashArray.byteLength);
   combined.set(salt, 0);
-  combined.set(new Uint8Array(hash), salt.length);
+  combined.set(hashArray, salt.length);
   
   // Convert to base64 for storage
   return btoa(String.fromCharCode(...combined));
@@ -164,8 +165,9 @@ export async function verifyToken(token: string, secret: string): Promise<JWTPay
     }
     
     const [headerEncoded, payloadEncoded, signatureEncoded] = parts;
-    const data = `${headerEncoded}.${payloadEncoded}`;
     
+    // Verify signature
+    const data = `${headerEncoded}.${payloadEncoded}`;
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(secret),
@@ -174,11 +176,10 @@ export async function verifyToken(token: string, secret: string): Promise<JWTPay
       ['verify']
     );
     
-    const signature = Uint8Array.from(atob(signatureEncoded), c => c.charCodeAt(0));
     const isValid = await crypto.subtle.verify(
       'HMAC',
       key,
-      signature,
+      base64UrlDecodeToUint8Array(signatureEncoded),
       encoder.encode(data)
     );
     
@@ -198,6 +199,19 @@ export async function verifyToken(token: string, secret: string): Promise<JWTPay
   } catch (error) {
     return null;
   }
+}
+
+function base64UrlDecodeToUint8Array(str: string): Uint8Array {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) {
+    str += '=';
+  }
+  const binaryString = atob(str);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
 /**

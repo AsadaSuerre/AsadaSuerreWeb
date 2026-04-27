@@ -462,9 +462,9 @@ async function updateContacts(request: Request, env: Env): Promise<Response> {
       INSERT OR REPLACE INTO contacts (id, whatsapp_phone_info, whatsapp_phone_support, facebook_url)
       VALUES (1, ?, ?, ?)
     `).bind(
-      body.whatsappPhoneInfo || null,
-      body.whatsappPhoneSupport || null,
-      body.facebookUrl || null
+      body.whatsapp_phone_info || null,
+      body.whatsapp_phone_support || null,
+      body.facebook_url || null
     ).run();
 
     return getContacts(env);
@@ -889,7 +889,7 @@ export default {
     }
     if (path.startsWith('/timeline/') && method === 'DELETE') {
       const id = path.split('/')[2];
-      return deleteTimelineItem(env, id);
+      return deleteTimelineItem(request, env, id);
     }
 
     // ==================== STATS ROUTES ====================

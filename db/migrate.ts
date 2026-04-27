@@ -9,6 +9,10 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const DATA_DIR = path.join(__dirname, '..', 'src', 'assets', 'data');
 const API_URL = 'http://localhost:8787';
+const ADMIN_USERNAME = 'user';
+const ADMIN_PASSWORD = 'pass';
+
+let authToken: string | null = null;
 
 interface Card {
   title: string;
@@ -60,11 +64,17 @@ interface UsData {
 
 // Helper function to make API requests
 async function apiRequest(endpoint: string, options: RequestInit): Promise<any> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
   const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 
@@ -74,6 +84,33 @@ async function apiRequest(endpoint: string, options: RequestInit): Promise<any> 
   }
 
   return response.json();
+}
+
+// Login to get auth token
+async function login(): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const data = await response.json();
+    authToken = data.token;
+    console.log('✓ Logged in successfully');
+  } catch (error: any) {
+    console.error(`✗ Failed to login: ${error.message}`);
+    throw error;
+  }
 }
 
 // Read JSON file
@@ -184,6 +221,10 @@ async function migrateAboutContent(usData: UsData): Promise<void> {
 // Main migration function
 export async function runMigrations(): Promise<void> {
   console.log('Starting migration to D1...\n');
+
+  // Login first for authenticated endpoints
+  await login();
+  console.log();
 
   // Read all JSON files
   const cards = readJsonFile<Card[]>('cards-data.json');

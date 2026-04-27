@@ -13,7 +13,7 @@ import {
 import { useDialog } from '../../context/DialogContext';
 import { iconMap } from '../GenericCard/GenericCard';
 
-export type ContentType = 'news' | 'service' | 'governance' | 'contact' | 'carousel' | 'timeline' | 'mission' | 'vision' | 'stats';
+export type ContentType = 'news' | 'service' | 'governance' | 'contact' | 'carousel' | 'timeline' | 'mission' | 'vision' | 'stats' | 'contactFloat';
 
 export interface AddEditDialogContentProps {
   onSave: (data: any) => Promise<void>;
@@ -98,6 +98,10 @@ const getFormFields = (contentType: ContentType): FormField[] => {
       return [
         { name: 'number', label: 'Número', type: 'text', required: true },
         { name: 'label', label: 'Etiqueta', type: 'text', required: true },
+      ];
+    case 'contactFloat':
+      return [
+        { name: 'value', label: 'Valor', type: 'text', required: true },
       ];
     default:
       return [];
