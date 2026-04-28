@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +13,8 @@ import {
   useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandIcon from '@mui/icons-material/Expand';
+import CompressIcon from '@mui/icons-material/Compress';
 import { TransitionProps } from '@mui/material/transitions';
 import { iconMap } from '../GenericCard/GenericCard';
 
@@ -43,6 +45,15 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
 }) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMd = useMediaQuery(theme.breakpoints.up('md'));
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
+
+  // Reset expanded state when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setIsImageExpanded(false);
+    }
+  }, [open]);
 
   const Transition = React.forwardRef<
     unknown,
@@ -50,6 +61,17 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
   >(function Transition(props, ref) {
     return <Zoom ref={ref} {...props} />;
   });
+
+  const handleImageClick = () => {
+    if (!isMd) {
+      // Mobile: expand/collapse
+      setIsImageExpanded(!isImageExpanded);
+    }
+  };
+
+  const handleExpandToggle = () => {
+    setIsImageExpanded(!isImageExpanded);
+  };
 
   return (
     <Dialog
@@ -60,93 +82,146 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
       fullScreen={isXs}
       slots={{ transition: Transition }}
       sx={sx}
+      PaperProps={{
+        sx: {
+          display: 'flex',
+          flexDirection: isMd ? 'row' : 'column',
+          overflow: 'hidden',
+          maxHeight: isMd ? '90vh' : '100vh',
+        }
+      }}
     >
       {image && (
         <Box
-          component="img"
-          src={image}
-          alt={title || 'Dialog header'}
-          loading="lazy"
-          decoding="async"
           sx={{
-            width: '100%',
-            height: '200px',
-            objectFit: 'cover',
-            display: 'block'
-          }}
-        />
-      )}
-      {title && (
-        <DialogTitle
-          sx={{
-            m: image ? '-40px 16px 16px' : 2,
-            p: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#04A6DB',
-            color: 'primary.contrastText',
-            border: "1px solid black",
-            borderRadius: 2,
+            width: isMd 
+              ? (isImageExpanded ? '100%' : '50%') 
+              : '100%',
+            height: isXs
+              ? (isImageExpanded ? '100vh' : 'auto')
+              : (isImageExpanded ? '100%' : '100%'),
             position: 'relative',
-            zIndex: 1
+            overflow: 'hidden',
+            transition: 'width 0.6s ease-in-out, height 0.6s ease-in-out',
           }}
         >
-          <Box sx={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            {title}
-            {icon && (
-              <Box sx={{ fontSize: '1.5rem' }}>
-                {iconMap[icon] || null}
-              </Box>
-            )}
-          </Box>
+          <Box
+            component="img"
+            src={image}
+            alt={title || 'Dialog header'}
+            loading="lazy"
+            decoding="async"
+            onClick={handleImageClick}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+              cursor: isXs ? 'pointer' : 'default',
+            }}
+          />
+          {/* Expand control button (mobile only) */}
+          {isXs && (
+            <IconButton
+              onClick={handleExpandToggle}
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                },
+                zIndex: 10,
+              }}
+            >
+              {isImageExpanded ? <CompressIcon /> : <ExpandIcon />}
+            </IconButton>
+          )}
+        </Box>
+      )}
+      <Box
+        sx={{
+          width: isMd && image && !isImageExpanded ? '50%' : '100%',
+          display: isXs && isImageExpanded ? 'none' : 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          maxHeight: isMd ? '90vh' : 'auto',
+        }}
+      >
+        {title && (
+          <DialogTitle
+            sx={{
+              m: 2,
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#04A6DB',
+              color: 'primary.contrastText',
+              border: "1px solid black",
+              borderRadius: 2,
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <Box sx={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              {title}
+              {icon && (
+                <Box sx={{ fontSize: '1.5rem' }}>
+                  {iconMap[icon] || null}
+                </Box>
+              )}
+            </Box>
+            <IconButton
+              edge="end"
+              onClick={onClose}
+              aria-label="close"
+              sx={{ color: 'primary.contrastText', position: 'absolute', right: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+        )}
+        {!title && (
           <IconButton
             edge="end"
             onClick={onClose}
             aria-label="close"
-            sx={{ color: 'primary.contrastText', position: 'absolute', right: 8 }}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+              zIndex: 1
+            }}
           >
             <CloseIcon />
           </IconButton>
-        </DialogTitle>
-      )}
-      {!title && (
-        <IconButton
-          edge="end"
-          onClick={onClose}
-          aria-label="close"
+        )}
+        <DialogContent
           sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            zIndex: 1
+            p: 3,
+            flex: 1,
+            overflow: 'auto',
           }}
         >
-          <CloseIcon />
-        </IconButton>
-      )}
-      <DialogContent
-        sx={{
-          p: 3,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        {children}
-      </DialogContent>
-      {actions && (
-        <DialogActions
-          sx={{
-            p: 2,
-            borderTop: 1,
-            borderColor: 'divider'
-          }}
-        >
-          {actions}
-        </DialogActions>
-      )}
+          {children}
+        </DialogContent>
+        {actions && (
+          <DialogActions
+            sx={{
+              p: 2,
+              borderTop: 1,
+              borderColor: 'divider',
+              flexShrink: 0,
+            }}
+          >
+            {actions}
+          </DialogActions>
+        )}
+      </Box>
     </Dialog>
   );
 };

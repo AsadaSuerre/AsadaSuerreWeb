@@ -24,6 +24,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import Loading from '../Loading/Loading';
+import FullScreenDialog from '../FullScreenDialog/FullScreenDialog';
 import './NuestraHistoria.scss';
 
 // Hook for number animation
@@ -124,6 +125,8 @@ export default function NuestraHistoria() {
   const [mission, setMission] = React.useState<{ title: string; content: string } | null>(null);
   const [vision, setVision] = React.useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [selectedTimelineItem, setSelectedTimelineItem] = React.useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const { isAuthenticated } = useAuth();
   const { openDialog, closeDialog } = useDialog();
 
@@ -295,6 +298,16 @@ export default function NuestraHistoria() {
     });
   };
 
+  const handleTimelineItemClick = (item: any) => {
+    setSelectedTimelineItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedTimelineItem(null);
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -357,7 +370,18 @@ export default function NuestraHistoria() {
               </TimelineSeparator>
               <TimelineContent sx={{ py: "12px", px: 2 }}>
                 <Box sx={{ position: 'relative' }}>
-                  <Paper elevation={1} sx={{ p: 2, backgroundColor: "grey.50" }}>
+                  <Paper 
+                    elevation={1} 
+                    sx={{ 
+                      p: 2, 
+                      backgroundColor: "grey.50",
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'grey.100',
+                      }
+                    }}
+                    onClick={() => handleTimelineItemClick(item)}
+                  >
                     {item.image && (
                       <Box
                         component="img"
@@ -388,9 +412,6 @@ export default function NuestraHistoria() {
                     >
                       {item.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.description}
-                    </Typography>
                   </Paper>
                   {isAuthenticated && (
                     <Box
@@ -404,14 +425,20 @@ export default function NuestraHistoria() {
                     >
                       <IconButton
                         size="small"
-                        onClick={() => handleEditTimelineItem(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTimelineItem(item);
+                        }}
                         sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => handleDeleteTimelineItem(String(item.id))}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTimelineItem(String(item.id));
+                        }}
                         sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
                       >
                         <DeleteIcon fontSize="small" />
@@ -478,6 +505,31 @@ export default function NuestraHistoria() {
           )}
         </Grid>
       </Grid>
+      
+      {/* FullScreenDialog for timeline items */}
+      {isDialogOpen && selectedTimelineItem && (
+        <FullScreenDialog
+          key={selectedTimelineItem.id}
+          open={isDialogOpen}
+          onClose={handleDialogClose}
+          title={selectedTimelineItem.title}
+          image={selectedTimelineItem.image}
+          icon={selectedTimelineItem.icon}
+        >
+          {selectedTimelineItem.year && (
+            <Typography
+              variant="h5"
+              color="primary"
+              sx={{ fontWeight: "bold", mb: 2 }}
+            >
+              {selectedTimelineItem.year}
+            </Typography>
+          )}
+          <Typography variant="body1" paragraph>
+            {selectedTimelineItem.description}
+          </Typography>
+        </FullScreenDialog>
+      )}
     </Container>
   );
 }
