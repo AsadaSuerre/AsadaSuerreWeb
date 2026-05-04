@@ -95,6 +95,11 @@ export default function AppBarComponent() {
   }, []);
 
   const handleDeleteSlide = async (index: number, slide: any) => {
+    if (carouselImages.length === 1) {
+      alert('Debe haber al menos un slide. No se puede eliminar el único slide.');
+      return;
+    }
+    
     if (!confirm('¿Estás seguro de eliminar este slide?')) return;
     
     try {

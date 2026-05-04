@@ -80,7 +80,7 @@ async function apiRequest(endpoint: string, options: RequestInit): Promise<any> 
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || `Request failed: ${response.statusText}`);
+    throw new Error(error.error || `Solicitud fallida: ${response.statusText}`);
   }
 
   return response.json();
@@ -101,14 +101,14 @@ async function login(): Promise<void> {
     });
 
     if (!response.ok) {
-      throw new Error('Login failed');
+      throw new Error('Error de inicio de sesión');
     }
 
     const data = await response.json();
     authToken = data.token;
-    console.log('✓ Logged in successfully');
+    console.log('✓ Inició sesión exitosamente');
   } catch (error: any) {
-    console.error(`✗ Failed to login: ${error.message}`);
+    console.error(`✗ Error al iniciar sesión: ${error.message}`);
     throw error;
   }
 }
@@ -134,7 +134,7 @@ async function migrateCards(cards: Card[]): Promise<void> {
       });
       console.log(`✓ Inserted card: ${card.title}`);
     } catch (error: any) {
-      console.error(`✗ Failed to insert card (${card.title}): ${error.message}`);
+      console.error(`✗ Error al insertar tarjeta (${card.title}): ${error.message}`);
     }
   }
 }
@@ -148,7 +148,7 @@ async function migrateContacts(contacts: Contacts): Promise<void> {
     });
     console.log('✓ Inserted contacts');
   } catch (error: any) {
-    console.error(`✗ Failed to insert contacts: ${error.message}`);
+    console.error(`✗ Error al insertar contactos: ${error.message}`);
   }
 }
 
@@ -162,7 +162,7 @@ async function migrateHomeSlides(slides: HomeSlide[]): Promise<void> {
       });
       console.log(`✓ Inserted home slide: ${slide.title}`);
     } catch (error: any) {
-      console.error(`✗ Failed to insert home slide (${slide.title}): ${error.message}`);
+      console.error(`✗ Error al insertar diapositiva de inicio (${slide.title}): ${error.message}`);
     }
   }
 }
@@ -181,7 +181,7 @@ async function migrateTimelineItems(items: TimelineItem[]): Promise<void> {
       });
       console.log(`✓ Inserted timeline item: ${item.year} - ${item.title}`);
     } catch (error: any) {
-      console.error(`✗ Failed to insert timeline item (${item.year} - ${item.title}): ${error.message}`);
+      console.error(`✗ Error al insertar elemento de línea de tiempo (${item.year} - ${item.title}): ${error.message}`);
     }
   }
 }
@@ -195,7 +195,7 @@ async function migrateStats(stats: StatsData[]): Promise<void> {
     });
     console.log('✓ Inserted stats');
   } catch (error: any) {
-    console.error(`✗ Failed to insert stats: ${error.message}`);
+    console.error(`✗ Error al insertar estadísticas: ${error.message}`);
   }
 }
 
@@ -209,7 +209,7 @@ async function migrateAboutContent(usData: UsData): Promise<void> {
       });
       console.log('✓ Inserted mission');
     } catch (error: any) {
-      console.error(`✗ Failed to insert mission: ${error.message}`);
+      console.error(`✗ Error al insertar misión: ${error.message}`);
     }
   }
 
@@ -221,14 +221,14 @@ async function migrateAboutContent(usData: UsData): Promise<void> {
       });
       console.log('✓ Inserted vision');
     } catch (error: any) {
-      console.error(`✗ Failed to insert vision: ${error.message}`);
+      console.error(`✗ Error al insertar visión: ${error.message}`);
     }
   }
 }
 
 // Main migration function
 export async function runMigrations(): Promise<void> {
-  console.log('Starting migration to D1...\n');
+  console.log('Iniciando migración a D1...\n');
 
   // Login first for authenticated endpoints
   await login();
@@ -241,36 +241,36 @@ export async function runMigrations(): Promise<void> {
   const timelineItems = readJsonFile<TimelineItem[]>('time-items-data.json');
   const usData = readJsonFile<UsData>('us-data.json');
 
-  console.log('✓ JSON files loaded\n');
+  console.log('✓ Archivos JSON cargados\n');
 
   // Migrate data
-  console.log('Migrating cards...');
+  console.log('Migrando tarjetas...');
   await migrateCards(cards);
   console.log();
 
-  console.log('Migrating contacts...');
+  console.log('Migrando contactos...');
   await migrateContacts(contacts);
   console.log();
 
-  console.log('Migrating home slides...');
+  console.log('Migrando diapositivas de inicio...');
   await migrateHomeSlides(homeSlides);
   console.log();
 
-  console.log('Migrating timeline items...');
+  console.log('Migrando elementos de línea de tiempo...');
   await migrateTimelineItems(timelineItems);
   console.log();
 
   if (usData.statsData) {
-    console.log('Migrating stats...');
+    console.log('Migrando estadísticas...');
     await migrateStats(usData.statsData);
     console.log();
   }
 
-  console.log('Migrating about content...');
+  console.log('Migrando contenido de \"Nosotros\"...');
   await migrateAboutContent(usData);
   console.log();
 
-  console.log('\n✓ Migration complete!');
+  console.log('\n✓ ¡Migración completada!');
 }
 
 // Run migrations

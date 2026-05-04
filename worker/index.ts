@@ -104,7 +104,7 @@ async function login(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
 
   if (!body || !body.username || !body.password) {
-    return errorResponse('Missing required fields: username, password', 400);
+    return errorResponse('Faltan campos requeridos: usuario, contraseña', 400);
   }
 
   try {
@@ -114,13 +114,13 @@ async function login(request: Request, env: Env): Promise<Response> {
     ).bind(body.username).first();
 
     if (!admin) {
-      return errorResponse('Invalid credentials', 401);
+      return errorResponse('Credenciales inválidas', 401);
     }
 
     // Verify password
     const isValid = await verifyPassword(body.password, admin.password_hash as string);
     if (!isValid) {
-      return errorResponse('Invalid credentials', 401);
+      return errorResponse('Credenciales inválidas', 401);
     }
 
     // Generate JWT token
@@ -150,14 +150,14 @@ async function getCurrentUser(request: Request, env: Env): Promise<Response> {
   const authHeader = request.headers.get('Authorization');
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return errorResponse('No token provided', 401);
+    return errorResponse('No se proporcionó token', 401);
   }
 
   const token = authHeader.substring(7);
   const payload = await verifyToken(token, env.JWT_SECRET);
 
   if (!payload) {
-    return errorResponse('Invalid or expired token', 401);
+    return errorResponse('Token inválido o expirado', 401);
   }
 
   try {
@@ -166,7 +166,7 @@ async function getCurrentUser(request: Request, env: Env): Promise<Response> {
     ).bind(payload.sub).first();
 
     if (!admin) {
-      return errorResponse('User not found', 404);
+      return errorResponse('Usuario no encontrado', 404);
     }
 
     return jsonResponse({
@@ -228,7 +228,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
     `).bind(id).all();
 
     if (!card.results || card.results.length === 0) {
-      return errorResponse('Card not found', 404);
+      return errorResponse('Tarjeta no encontrada', 404);
     }
 
     const mapped = mapCardWithRelations(card.results);
@@ -272,7 +272,7 @@ async function createCard(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
 
   if (!body || !body.title || !body.description || !body.variant) {
-    return errorResponse('Missing required fields: title, description, variant');
+    return errorResponse('Faltan campos requeridos: título, descripción, variante');
   }
 
   try {
@@ -325,13 +325,13 @@ async function createCard(request: Request, env: Env): Promise<Response> {
 async function updateCard(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body) {
-    return errorResponse('Missing request body');
+    return errorResponse('Falta el cuerpo de la solicitud');
   }
 
   try {
@@ -385,7 +385,7 @@ async function updateCard(request: Request, env: Env, id: string): Promise<Respo
     }
 
     if (updateFields.length === 0) {
-      return errorResponse('No fields to update');
+      return errorResponse('No hay campos para actualizar');
     }
 
     params.push(id);
@@ -430,7 +430,7 @@ async function updateCard(request: Request, env: Env, id: string): Promise<Respo
 async function deleteCard(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   try {
@@ -457,7 +457,7 @@ async function getContacts(env: Env): Promise<Response> {
 async function updateContacts(request: Request, env: Env): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
@@ -495,13 +495,13 @@ async function getHomeSlides(env: Env): Promise<Response> {
 async function createHomeSlide(request: Request, env: Env): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body || !body.image || !body.title || !body.description) {
-    return errorResponse('Missing required fields: image, title, description');
+    return errorResponse('Faltan campos requeridos: imagen, título, descripción');
   }
 
   try {
@@ -529,13 +529,13 @@ async function createHomeSlide(request: Request, env: Env): Promise<Response> {
 async function updateHomeSlide(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body) {
-    return errorResponse('Missing request body');
+    return errorResponse('Falta el cuerpo de la solicitud');
   }
 
   try {
@@ -564,7 +564,7 @@ async function updateHomeSlide(request: Request, env: Env, id: string): Promise<
     }
 
     if (updateFields.length === 0) {
-      return errorResponse('No fields to update');
+      return errorResponse('No hay campos para actualizar');
     }
 
     params.push(id);
@@ -584,14 +584,14 @@ async function updateHomeSlide(request: Request, env: Env, id: string): Promise<
 async function deleteHomeSlide(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   try {
     const result = await env.asada_suerre_db.prepare('DELETE FROM home_slides WHERE id = ?').bind(id).run();
 
     if (result.meta.changes === 0) {
-      return errorResponse('Home slide not found', 404);
+      return errorResponse('Diapositiva de inicio no encontrada', 404);
     }
 
     return jsonResponse({ success: true, message: 'Home slide deleted' });
@@ -613,13 +613,13 @@ async function getTimeline(env: Env): Promise<Response> {
 async function createTimelineItem(request: Request, env: Env): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body || !body.year || !body.title || !body.description) {
-    return errorResponse('Missing required fields: year, title, description');
+    return errorResponse('Faltan campos requeridos: año, título, descripción');
   }
 
   try {
@@ -648,13 +648,13 @@ async function createTimelineItem(request: Request, env: Env): Promise<Response>
 async function updateTimelineItem(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body) {
-    return errorResponse('Missing request body');
+    return errorResponse('Falta el cuerpo de la solicitud');
   }
 
   try {
@@ -687,7 +687,7 @@ async function updateTimelineItem(request: Request, env: Env, id: string): Promi
     }
 
     if (updateFields.length === 0) {
-      return errorResponse('No fields to update');
+      return errorResponse('No hay campos para actualizar');
     }
 
     params.push(id);
@@ -707,14 +707,14 @@ async function updateTimelineItem(request: Request, env: Env, id: string): Promi
 async function deleteTimelineItem(request: Request, env: Env, id: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   try {
     const result = await env.asada_suerre_db.prepare('DELETE FROM timeline_items WHERE id = ?').bind(id).run();
 
     if (result.meta.changes === 0) {
-      return errorResponse('Timeline item not found', 404);
+      return errorResponse('Elemento de línea de tiempo no encontrado', 404);
     }
 
     return jsonResponse({ success: true, message: 'Timeline item deleted' });
@@ -736,13 +736,13 @@ async function getStats(env: Env): Promise<Response> {
 async function updateStats(request: Request, env: Env): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body || !Array.isArray(body)) {
-    return errorResponse('Request body must be an array of stats');
+    return errorResponse('El cuerpo de la solicitud debe ser un arreglo de estadísticas');
   }
 
   try {
@@ -781,7 +781,7 @@ async function getAboutContentByType(env: Env, type: string): Promise<Response> 
     .first();
 
   if (!result) {
-    return errorResponse('About content not found', 404);
+    return errorResponse('Contenido de "Nosotros" no encontrado', 404);
   }
 
   return jsonResponse(result);
@@ -791,13 +791,13 @@ async function getAboutContentByType(env: Env, type: string): Promise<Response> 
 async function upsertAboutContent(request: Request, env: Env, type: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   const body = await parseBody(request);
 
   if (!body || !body.title || !body.content) {
-    return errorResponse('Missing required fields: title, content');
+    return errorResponse('Faltan campos requeridos: título, contenido');
   }
 
   try {
@@ -936,7 +936,7 @@ export default {
     }
 
     // 404 for unknown routes
-    return errorResponse('Not found', 404);
+    return errorResponse('No encontrado', 404);
   },
 };
 
@@ -946,7 +946,7 @@ export default {
 async function uploadFile(request: Request, env: Env): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   try {
@@ -954,12 +954,12 @@ async function uploadFile(request: Request, env: Env): Promise<Response> {
     const file = formData.get('file');
 
     if (!file) {
-      return errorResponse('No file provided', 400);
+      return errorResponse('No se proporcionó archivo', 400);
     }
 
     // Check if it's a File object (not a string)
     if (typeof file === 'string') {
-      return errorResponse('Invalid file provided', 400);
+      return errorResponse('Archivo inválido proporcionado', 400);
     }
 
     // Cast to File since we've verified it's not a string
@@ -967,12 +967,12 @@ async function uploadFile(request: Request, env: Env): Promise<Response> {
 
     // Validate file type (accept both images and documents)
     if (!isValidFileType(imageFile.type)) {
-      return errorResponse('Invalid file type. Allowed types: JPEG, PNG, WebP, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV', 400);
+      return errorResponse('Tipo de archivo inválido. Tipos permitidos: JPEG, PNG, WebP, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV', 400);
     }
 
     // Validate file size
     if (!isValidFileSize(imageFile.size)) {
-      return errorResponse('File too large. Maximum size is 10MB.', 400);
+      return errorResponse('Archivo demasiado grande. Tamaño máximo es 10MB.', 400);
     }
 
     // Generate unique filename
@@ -989,8 +989,8 @@ async function uploadFile(request: Request, env: Env): Promise<Response> {
 
     return jsonResponse({ key: filename }, 201);
   } catch (error) {
-    console.error('Upload error:', error);
-    return errorResponse('Failed to upload file', 500);
+    console.error('Error al subir:', error);
+    return errorResponse('Error al subir archivo', 500);
   }
 }
 
@@ -998,15 +998,15 @@ async function uploadFile(request: Request, env: Env): Promise<Response> {
 async function deleteFile(request: Request, env: Env, key: string): Promise<Response> {
   const auth = await authenticateRequest(request, env);
   if (!auth) {
-    return errorResponse('Unauthorized', 401);
+    return errorResponse('No autorizado', 401);
   }
 
   try {
     await env.asada_suerre_images.delete(key);
     return jsonResponse({ success: true });
   } catch (error) {
-    console.error('Delete error:', error);
-    return errorResponse('Failed to delete file', 500);
+    console.error('Error al eliminar:', error);
+    return errorResponse('Error al eliminar archivo', 500);
   }
 }
 
@@ -1016,7 +1016,7 @@ async function serveImage(request: Request, env: Env, key: string): Promise<Resp
     const object = await env.asada_suerre_images.get(key);
 
     if (!object) {
-      return errorResponse('Image not found', 404);
+      return errorResponse('Imagen no encontrada', 404);
     }
 
     const headers = new Headers();
@@ -1026,7 +1026,7 @@ async function serveImage(request: Request, env: Env, key: string): Promise<Resp
 
     return new Response(object.body, { headers });
   } catch (error) {
-    console.error('Serve image error:', error);
-    return errorResponse('Failed to serve image', 500);
+    console.error('Error al servir imagen:', error);
+    return errorResponse('Error al servir imagen', 500);
   }
 }

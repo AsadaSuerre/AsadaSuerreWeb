@@ -42,10 +42,10 @@ const getFormFields = (contentType: ContentType): FormField[] => {
       return [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'subtitle', label: 'Subtítulo', type: 'text' },
-        { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 4 },
-        { name: 'image', label: 'URL de Imagen', type: 'image' },
+        { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 4, required: true },
+        { name: 'image', label: 'Imagen', type: 'image' },
         { name: 'tag', label: 'Etiqueta', type: 'text' },
-        { name: 'date', label: 'Fecha', type: 'date' },
+        { name: 'date', label: 'Fecha', type: 'date', required: true },
       ];
     case 'service':
     case 'governance':
@@ -53,7 +53,7 @@ const getFormFields = (contentType: ContentType): FormField[] => {
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'subtitle', label: 'Subtítulo', type: 'text' },
         { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 4 },
-        { name: 'image', label: 'URL de Imagen', type: 'image' },
+        { name: 'image', label: 'Imagen', type: 'image' },
         { name: 'icon', label: 'Icono', type: 'select', required: true, options: [
           { value: 'Groups', label: 'Grupos' },
           { value: 'Gavel', label: 'Martillo' },
@@ -64,8 +64,8 @@ const getFormFields = (contentType: ContentType): FormField[] => {
           { value: 'Receipt', label: 'Recibo' },
           { value: 'WaterDrop', label: 'Gota de agua' },
         ]},
-        { name: 'items', label: 'Requisitos (separados por coma)', type: 'items' },
-        { name: 'url', label: 'URL', type: 'text' },
+        { name: 'items', label: 'Lista de Elementos', type: 'items' },
+        { name: 'url', label: 'Redireccion a URL', type: 'text' },
       ];
     case 'contact':
       return [
@@ -84,14 +84,14 @@ const getFormFields = (contentType: ContentType): FormField[] => {
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'subtitle', label: 'Subtítulo', type: 'text' },
         { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 3 },
-        { name: 'image', label: 'URL de Imagen', type: 'image', required: true },
+        { name: 'image', label: 'Imagen', type: 'image', required: true },
       ];
     case 'timeline':
       return [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'year', label: 'Año', type: 'text', required: true },
         { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 4 },
-        { name: 'image', label: 'URL de Imagen', type: 'image' },
+        { name: 'image', label: 'Imagen', type: 'image' },
       ];
     case 'mission':
     case 'vision':
@@ -362,17 +362,26 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Button disabled={isSaving} onClick={closeDialog}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={isSaving}
-          sx={{ backgroundColor: '#04A6DB', '&:hover': { backgroundColor: '#0385b0' } }}
-        >
-          {isSaving ? 'Guardando...' : mode === 'add' ? 'Agregar' : 'Guardar'}
-        </Button>
+        <Box sx={{ width: '100%', mb: 1 }}>
+          {Object.keys(errors).length > 0 && (
+            <Typography variant="body2" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              ¡Hay errores en los campos, por favor revisar!
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: 1 }}>
+          <Button disabled={isSaving} onClick={closeDialog}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={isSaving}
+            sx={{ backgroundColor: '#04A6DB', '&:hover': { backgroundColor: '#0385b0' } }}
+          >
+            {isSaving ? 'Guardando...' : mode === 'add' ? 'Agregar' : 'Guardar'}
+          </Button>
+        </Box>
       </DialogActions>
     </Box>
   );

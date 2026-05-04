@@ -150,6 +150,20 @@ export default function Gestiones() {
             />
           </Grid>
         ))}
+        {gestionesData.length === 0 && !isAuthenticated && (
+          <Grid size={{ xs: 12 }}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 8,
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                No hay gestiones disponibles
+              </Typography>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Container>
   );

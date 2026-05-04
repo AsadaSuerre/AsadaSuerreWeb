@@ -47,15 +47,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
           gap: 3,
           py: 2
         }}
-      >
-        <Typography variant="h5" align="center" gutterBottom>
-          Portal Administrativo
-        </Typography>
-        
-        <Typography variant="body2" align="center" color="text.secondary">
-          Inicia sesión para acceder al modo de edición
-        </Typography>
-
+      >        
         {error && (
           <Alert severity="error" onClose={() => setError('')}>
             {error}
