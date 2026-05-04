@@ -224,6 +224,7 @@ export default function AppBarComponent() {
         mt: "calc(var(--template-frame-height, 0px))",
         zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
+      role="banner"
     >
       {/* Hero Section with Background Image */}
       <ImageCarousel 

@@ -115,11 +115,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {localFile ? localFile.name : t.upload.fileUploaded}
           </Typography>
           {showDownload && value && (
-            <IconButton onClick={handleDownload} color="primary" size="small">
+            <IconButton onClick={handleDownload} color="primary" size="small" aria-label={t.upload.downloadFile}>
               <DownloadIcon fontSize="small" />
             </IconButton>
           )}
-          <IconButton onClick={handleDelete} color="error" size="small">
+          <IconButton onClick={handleDelete} color="error" size="small" aria-label={t.common.delete}>
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -141,7 +141,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       {error && (
-        <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+        <Typography variant="caption" color="error" sx={{ mt: 1 }} role="alert">
           {error}
         </Typography>
       )}

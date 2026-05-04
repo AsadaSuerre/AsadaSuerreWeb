@@ -140,6 +140,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 backgroundColor: 'rgba(255, 255, 255, 1)',
               },
             }}
+            aria-label={t.common.delete}
           >
             <DeleteIcon />
           </IconButton>
@@ -184,7 +185,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       />
 
       {error && (
-        <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+        <Typography variant="caption" color="error" sx={{ mt: 1 }} role="alert">
           {error}
         </Typography>
       )}

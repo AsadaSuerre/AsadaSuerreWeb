@@ -110,18 +110,21 @@ function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed
                   <IconButton
                     onClick={() => onAdd?.()}
                     sx={{ backgroundColor: 'success.main', color: 'success.contrastText' }}
+                    aria-label="Agregar slide"
                   >
                     <AddIcon />
                   </IconButton>
                   <IconButton
                     onClick={() => onEdit?.(index, slide)}
                     sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+                    aria-label="Editar slide"
                   >
                     <EditIcon />
                   </IconButton>
                   <IconButton
                     onClick={() => onDelete?.(index, slide)}
                     sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+                    aria-label="Eliminar slide"
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -141,7 +144,7 @@ function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed
                 <Box
                   component="img"
                   src={getImageUrl(slide.image) || ''}
-                  alt={`Slide ${index + 1}`}
+                  alt={slide.title || `Slide ${index + 1}`}
                   loading="lazy"
                   decoding="async"
                   sx={{

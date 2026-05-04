@@ -401,7 +401,7 @@ export default function AddEditDialogContent({ onSave, contentType, initialData,
       <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <Box sx={{ width: '100%', mb: 1 }}>
           {Object.keys(errors).length > 0 && (
-            <Typography variant="body2" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="body2" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} role="alert">
               {t.validation.errorsInFields}
             </Typography>
           )}

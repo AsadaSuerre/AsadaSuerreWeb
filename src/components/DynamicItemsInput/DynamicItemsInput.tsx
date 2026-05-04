@@ -210,6 +210,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
                   size="small"
                   color="error"
                   sx={{ mt: 0.5 }}
+                  aria-label={t.common.delete}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>

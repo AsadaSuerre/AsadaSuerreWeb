@@ -635,6 +635,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
           size="small"
           onClick={handleEdit}
           sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+          aria-label={t.common.edit}
         >
           <EditIcon fontSize="small" />
         </IconButton>
@@ -642,6 +643,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
           size="small"
           onClick={handleDelete}
           sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+          aria-label={t.common.delete}
         >
           <DeleteIcon fontSize="small" />
         </IconButton>
