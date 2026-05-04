@@ -9,6 +9,7 @@ import {
   Container
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface LoginDialogProps {
   onSuccess?: () => void;
@@ -20,6 +21,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +32,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
       await login(username, password);
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de inicio de sesión');
+      setError(err instanceof Error ? err.message : t.auth.loginFailed);
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +57,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
         )}
 
         <TextField
-          label="Usuario"
+          label={t.auth.username}
           variant="outlined"
           fullWidth
           value={username}
@@ -66,7 +68,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
         />
 
         <TextField
-          label="Contraseña"
+          label={t.auth.password}
           type="password"
           variant="outlined"
           fullWidth
@@ -84,7 +86,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
           disabled={isLoading || !username || !password}
           sx={{ mt: 2 }}
         >
-          {isLoading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
+          {isLoading ? <CircularProgress size={24} /> : t.auth.login}
         </Button>
       </Box>
     </Container>

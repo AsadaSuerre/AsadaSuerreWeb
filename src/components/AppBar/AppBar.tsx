@@ -15,6 +15,7 @@ import ImageCarousel from '../ImageCarousel/ImageCarousel';
 import { DataService } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
 import { LoginDialogContent } from '../LoginDialog';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 // Import carousel images for mapping
@@ -46,6 +47,7 @@ export default function AppBarComponent() {
   const [open, setOpen] = React.useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const { openDialog, closeDialog } = useDialog();
+  const { t } = useTranslation();
   const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,11 +98,11 @@ export default function AppBarComponent() {
 
   const handleDeleteSlide = async (index: number, slide: any) => {
     if (carouselImages.length === 1) {
-      alert('Debe haber al menos un slide. No se puede eliminar el único slide.');
+      alert(t.errors.mustHaveOneSlide);
       return;
     }
     
-    if (!confirm('¿Estás seguro de eliminar este slide?')) return;
+    if (!confirm(t.confirm.deleteSlide)) return;
     
     try {
       await DataService.deleteHomeSlide(String(slide.id));
@@ -114,13 +116,13 @@ export default function AppBarComponent() {
       }));
       setCarouselImages(transformed);
     } catch (error) {
-      alert('Error al eliminar: ' + (error as Error).message);
+      alert(t.errors.deleteError + ': ' + (error as Error).message);
     }
   };
 
   const handleEditSlide = (index: number, slide: any) => {
     openDialog({
-      title: 'Editar Slide',
+      title: t.actions.editSlide,
       icon: 'Edit',
       content: (
         <AddEditDialogContent
@@ -154,7 +156,7 @@ export default function AppBarComponent() {
 
   const handleAddSlide = () => {
     openDialog({
-      title: 'Agregar Slide',
+      title: t.actions.addSlide,
       icon: 'Add',
       content: (
         <AddEditDialogContent
@@ -273,7 +275,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Inicio
+                {t.nav.home}
               </Button>
               <Button
                 variant="text"
@@ -289,7 +291,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Noticias
+                {t.nav.news}
               </Button>
               <Button
                 variant="text"
@@ -305,7 +307,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Gestiones
+                {t.nav.services}
               </Button>
               <Button
                 variant="text"
@@ -321,7 +323,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Gobernanza
+                {t.nav.governance}
               </Button>
               <Button
                 variant="text"
@@ -337,7 +339,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Nuestra historia
+                {t.nav.about}
               </Button>
             </Box>
           </Box>
@@ -362,7 +364,7 @@ export default function AppBarComponent() {
                   : "inherit",
               }}
             >
-              Contactos
+              {t.nav.contacts}
             </Button>
             <Button
               color="primary"
@@ -370,7 +372,7 @@ export default function AppBarComponent() {
               size="small"
               onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
             >
-              {isAuthenticated ? `Cerrar Sesión (${user?.username})` : 'Portal Administrativo'}
+              {isAuthenticated ? `${t.auth.logout} (${user?.username})` : 'Portal Administrativo'}
             </Button>
           </Box>
           <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1 }}>
@@ -411,22 +413,22 @@ export default function AppBarComponent() {
             >
               <Box sx={{ p: 2, backgroundColor: "background.default" }}>
                 <MenuItem onClick={() => handleNavigation("/")}>
-                  Inicio
+                  {t.nav.home}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/noticias")}>
-                  Noticias
+                  {t.nav.news}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/gestiones")}>
-                  Gestiones
+                  {t.nav.services}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/gobernanza")}>
-                  Gobernanza{" "}
+                  {t.nav.governance}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/nuestra-historia")}>
-                  Nuestra historia
+                  {t.nav.about}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/contactos")}>
-                  Contactos
+                  {t.nav.contacts}
                 </MenuItem>
                 <Divider sx={{ my: 3 }} />
                 <MenuItem>
@@ -436,7 +438,7 @@ export default function AppBarComponent() {
                     fullWidth
                     onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
                   >
-                    {isAuthenticated ? `Cerrar Sesión (${user?.username})` : 'Portal Administrativo'}
+                    {isAuthenticated ? `${t.auth.logout} (${user?.username})` : 'Portal Administrativo'}
                   </Button>
                 </MenuItem>
               </Box>

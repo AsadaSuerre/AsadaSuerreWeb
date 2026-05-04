@@ -7,6 +7,7 @@ import GenericCard from '../GenericCard/GenericCard';
 import { DataService } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
 import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
@@ -17,6 +18,7 @@ export default function Gestiones() {
   const [loading, setLoading] = React.useState(true);
   const { isAuthenticated } = useAuth();
   const { openDialog, closeDialog } = useDialog();
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     async function loadData() {
@@ -159,7 +161,7 @@ export default function Gestiones() {
               }}
             >
               <Typography variant="h6" color="text.secondary">
-                No hay gestiones disponibles
+                {t.empty.noServices}
               </Typography>
             </Box>
           </Grid>

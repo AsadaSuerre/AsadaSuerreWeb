@@ -5,17 +5,45 @@ import {
   Box,
   TextField,
   Button,
+  Typography,
   MenuItem,
   Stack,
-  Chip,
-  Typography,
 } from '@mui/material';
 import { useDialog } from '../../context/DialogContext';
-import { iconMap } from '../GenericCard/GenericCard';
+import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/TranslationContext';
 import ImageUpload from '../ImageUpload/ImageUpload';
 import DynamicItemsInput from '../DynamicItemsInput/DynamicItemsInput';
+import GroupsIcon from '@mui/icons-material/Groups';
+import GavelIcon from '@mui/icons-material/Gavel';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import PhoneIcon from '@mui/icons-material/Phone';
+import EmailIcon from '@mui/icons-material/Email';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import DescriptionIcon from '@mui/icons-material/Description';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PaymentIcon from '@mui/icons-material/Payment';
+
+import { iconMap } from '../GenericCard/GenericCard';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+
+// Icon mapping for dropdown display
+const iconComponentMap: Record<string, React.ElementType> = {
+  Groups: GroupsIcon,
+  Gavel: GavelIcon,
+  AccountBalance: AccountBalanceIcon,
+  Description: DescriptionIcon,
+  Assignment: AssignmentIcon,
+  Payment: PaymentIcon,
+  Receipt: ReceiptIcon,
+  WaterDrop: WaterDropIcon,
+  Phone: PhoneIcon,
+  Email: EmailIcon,
+  LocationOn: LocationOnIcon,
+};
 
 export type ContentType = 'news' | 'service' | 'governance' | 'contact' | 'carousel' | 'timeline' | 'mission' | 'vision' | 'stats' | 'contactFloat';
 
@@ -113,18 +141,16 @@ const getFormFields = (contentType: ContentType): FormField[] => {
   }
 };
 
-const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
-  onSave,
-  contentType,
-  initialData,
-  mode = 'add'
-}) => {
+export default function AddEditDialogContent({ onSave, contentType, initialData, mode = 'add' }: AddEditDialogContentProps) {
+  const [formData, setFormData] = React.useState<any>({});
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [filesToUpload, setFilesToUpload] = React.useState<Record<string, File>>({});
+  const [filesToDelete, setFilesToDelete] = React.useState<string[]>([]);
+  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const { t } = useTranslation();
   const { closeDialog } = useDialog();
-  const [formData, setFormData] = useState<any>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
-  const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
 
   const formFields = getFormFields(contentType);
 
@@ -213,7 +239,7 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
       const hasPendingUpload = filesToUpload[field.name] !== undefined;
       const hasValue = formData[field.name] !== undefined && formData[field.name] !== '';
       if (field.required && !hasValue && !hasPendingUpload) {
-        newErrors[field.name] = `${field.label} es requerido`;
+        newErrors[field.name] = `${field.label} ${t.common.required}`;
       }
     });
     setErrors(newErrors);
@@ -240,7 +266,7 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Error al subir');
+          throw new Error(error.error || t.errors.uploadError);
         }
 
         const data = await response.json();
@@ -269,6 +295,11 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
       // Delete old files marked for deletion
       if (filesToDelete.length > 0) {
         await deleteFilesFromR2(filesToDelete);
+      }
+
+      // Add author when creating new items
+      if (mode === 'add' && user) {
+        updatedFormData.author = user.username;
       }
 
       // Save the card data with updated file keys
@@ -311,11 +342,17 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
                   error={!!errors[field.name]}
                   helperText={errors[field.name]}
                 >
-                  {field.options?.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
+                  {field.options?.map((option) => {
+                    const IconComponent = iconComponentMap[option.value];
+                    return (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {IconComponent && <IconComponent />}
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
                 </TextField>
               ) : field.type === 'items' ? (
                 <DynamicItemsInput
@@ -365,13 +402,13 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
         <Box sx={{ width: '100%', mb: 1 }}>
           {Object.keys(errors).length > 0 && (
             <Typography variant="body2" color="error" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              ¡Hay errores en los campos, por favor revisar!
+              {t.validation.errorsInFields}
             </Typography>
           )}
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: 1 }}>
           <Button disabled={isSaving} onClick={closeDialog}>
-            Cancelar
+            {t.common.cancel}
           </Button>
           <Button
             onClick={handleSave}
@@ -379,12 +416,10 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
             disabled={isSaving}
             sx={{ backgroundColor: '#04A6DB', '&:hover': { backgroundColor: '#0385b0' } }}
           >
-            {isSaving ? 'Guardando...' : mode === 'add' ? 'Agregar' : 'Guardar'}
+            {isSaving ? t.common.loading : mode === 'add' ? t.common.add : t.common.save}
           </Button>
         </Box>
       </DialogActions>
     </Box>
   );
 };
-
-export default AddEditDialogContent;

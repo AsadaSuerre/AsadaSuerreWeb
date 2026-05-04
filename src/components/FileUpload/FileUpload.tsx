@@ -9,6 +9,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/TranslationContext';
 
 export interface FileUploadProps {
   value?: string;
@@ -28,6 +29,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   onFileChange
 }) => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [localFile, setLocalFile] = useState<File | null>(null);
   const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
 
@@ -49,13 +51,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
       'text/csv',
     ];
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Allowed types: JPEG, PNG, WebP, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV');
+      alert(t.errors.invalidFileType);
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Maximum size is 10MB.');
+      alert(t.errors.fileTooLarge);
       return;
     }
 
@@ -84,7 +86,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return (
       <Box>
         <Typography variant="caption" color="text.secondary">
-          {label}: Se requiere autenticación para subir archivos
+          {label}: {t.upload.authRequired}
         </Typography>
         {value && showDownload && (
           <Button
@@ -94,7 +96,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             variant="outlined"
             size="small"
           >
-            Descargar archivo
+            {t.upload.downloadFile}
           </Button>
         )}
       </Box>
@@ -110,7 +112,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       {value || localFile ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            {localFile ? localFile.name : 'Archivo subido exitosamente'}
+            {localFile ? localFile.name : t.upload.fileUploaded}
           </Typography>
           {showDownload && value && (
             <IconButton onClick={handleDownload} color="primary" size="small">
@@ -128,7 +130,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           startIcon={<CloudUploadIcon />}
           fullWidth
         >
-          Subir archivo
+          {t.upload.uploadFile}
           <input
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"

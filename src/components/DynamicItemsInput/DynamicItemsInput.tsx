@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FileUpload from '../FileUpload/FileUpload';
 import LinkIcon from '@mui/icons-material/Link';
+import { useTranslation } from '../../context/TranslationContext';
 
 export interface DynamicItemsInputProps {
   label?: string;
@@ -22,6 +23,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
   onFilesToDelete,
   onItemFileChange
 }) => {
+  const { t } = useTranslation();
   // Internal state to track file URLs for each item
   const [fileUrls, setFileUrls] = useState<Record<number, string>>({});
   // Internal state to track input type (file or url) for each item
@@ -222,7 +224,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
                 <FormControlLabel 
                   value="file" 
                   control={<Radio size="small" />} 
-                  label={<Typography variant="caption">File</Typography>}
+                  label={<Typography variant="caption">{t.upload.fileOptional}</Typography>}
                 />
                 <FormControlLabel 
                   value="url" 
@@ -233,7 +235,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
               
               {currentInputType === 'file' ? (
                 <FileUpload
-                  label="Archivo (opcional)"
+                  label={t.upload.fileOptional}
                   value={currentFileUrl}
                   onChange={(fileUrl) => handleFileChange(index, fileUrl)}
                   onFileChange={(file, oldKey) => handleItemFileChange(index, file, oldKey)}
@@ -244,7 +246,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
                   fullWidth
                   value={currentFileUrl || ''}
                   onChange={(e) => handleUrlChange(index, e.target.value)}
-                  placeholder="Ingrese URL (ej. https://ejemplo.com/archivo.pdf)"
+                  placeholder={t.upload.enterUrl}
                   size="small"
                   InputProps={{
                     startAdornment: <LinkIcon sx={{ mr: 1, color: 'text.secondary' }} />

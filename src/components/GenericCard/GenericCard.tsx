@@ -28,6 +28,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { useTranslation } from '../../context/TranslationContext';
 import { useDialog } from '../index';
 import { memo, useCallback } from 'react';
 import { getImageUrl } from '../../services/dataService';
@@ -311,6 +312,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
   onDelete,
 }) => {
   const { openDialog } = useDialog();
+  const { t } = useTranslation();
   const variant = data.variant || 'default';
 
   const handleFocus = useCallback(() => {
@@ -410,7 +412,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
                                   <DownloadIcon fontSize="small" sx={{ fontSize: 16 }} />
                                 )}
                                 <Typography variant="caption" color="text.secondary">
-                                  {isExternalUrl(fileUrl) ? 'Hacer clic para visitar' : 'Hacer clic para descargar'}
+                                  {isExternalUrl(fileUrl) ? t.upload.clickToVisit : t.upload.clickToDownload}
                                 </Typography>
                               </Box>
                             )}

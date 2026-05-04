@@ -297,7 +297,13 @@ async function createCard(request: Request, env: Env): Promise<Response> {
     const cardId = cardResult.meta.last_row_id;
 
     // Insert authors if provided
-    if (body.authors && Array.isArray(body.authors)) {
+    if (body.author && typeof body.author === 'string') {
+      // Handle single author string
+      await env.asada_suerre_db.prepare(
+        'INSERT INTO card_authors (card_id, name, avatar) VALUES (?, ?, ?)'
+      ).bind(cardId, body.author, null).run();
+    } else if (body.authors && Array.isArray(body.authors)) {
+      // Handle array of author objects
       for (const author of body.authors) {
         await env.asada_suerre_db.prepare(
           'INSERT INTO card_authors (card_id, name, avatar) VALUES (?, ?, ?)'

@@ -10,6 +10,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface ImageUploadProps {
   value?: string;
@@ -27,6 +28,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onFileChange
 }) => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [localFile, setLocalFile] = useState<File | null>(null);
   const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
@@ -48,13 +50,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
+      alert(t.errors.invalidFileType);
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File too large. Maximum size is 10MB.');
+      alert(t.errors.fileTooLarge);
       return;
     }
 
@@ -79,7 +81,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     return (
       <Box>
         <Typography variant="body2" color="text.secondary">
-          {label}: Se requiere autenticación para subir imágenes
+          {label}: {t.upload.authRequired}
         </Typography>
         {preview && (
           <Box
@@ -165,10 +167,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         >
           <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
           <Typography variant="body2" color="text.secondary">
-            Hacer clic para subir imagen
+            {t.upload.clickToUpload}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            JPEG, PNG, WebP (máx 10MB)
+            {t.upload.allowedTypes}
           </Typography>
         </Paper>
       )}

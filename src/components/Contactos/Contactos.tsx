@@ -7,6 +7,7 @@ import GenericCard from '../GenericCard/GenericCard';
 import { DataService } from '../../services/dataService';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
 import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
@@ -16,6 +17,7 @@ export default function Contactos() {
   const [contactosData, setContactosData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const { openDialog, closeDialog } = useDialog();
 
   React.useEffect(() => {
@@ -159,7 +161,7 @@ export default function Contactos() {
               }}
             >
               <Typography variant="h6" color="text.secondary">
-                No hay contactos disponibles
+                {t.empty.noContacts}
               </Typography>
             </Box>
           </Grid>

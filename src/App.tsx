@@ -15,6 +15,7 @@ import {
 } from './components';
 import GlobalDialog from './components/FullScreenDialog/GlobalDialog';
 import { AuthProvider } from './context/AuthContext';
+import { TranslationProvider } from './context/TranslationContext';
 import './App.css';
 
 function AppContent() {
@@ -43,10 +44,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <GlobalDialog>
-        <AppContent />
-      </GlobalDialog>
-    </AuthProvider>
+    <TranslationProvider>
+      <AuthProvider>
+        <GlobalDialog>
+          <AppContent />
+        </GlobalDialog>
+      </AuthProvider>
+    </TranslationProvider>
   );
 }
