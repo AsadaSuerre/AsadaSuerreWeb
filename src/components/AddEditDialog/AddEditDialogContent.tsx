@@ -12,6 +12,10 @@ import {
 } from '@mui/material';
 import { useDialog } from '../../context/DialogContext';
 import { iconMap } from '../GenericCard/GenericCard';
+import ImageUpload from '../ImageUpload/ImageUpload';
+import DynamicItemsInput from '../DynamicItemsInput/DynamicItemsInput';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 export type ContentType = 'news' | 'service' | 'governance' | 'contact' | 'carousel' | 'timeline' | 'mission' | 'vision' | 'stats' | 'contactFloat';
 
@@ -49,6 +53,7 @@ const getFormFields = (contentType: ContentType): FormField[] => {
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'subtitle', label: 'Subtítulo', type: 'text' },
         { name: 'description', label: 'Descripción', type: 'textarea', multiline: true, rows: 4 },
+        { name: 'image', label: 'URL de Imagen', type: 'image' },
         { name: 'icon', label: 'Icono', type: 'select', required: true, options: [
           { value: 'Groups', label: 'Grupos' },
           { value: 'Gavel', label: 'Martillo' },
@@ -118,30 +123,96 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
+  const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
 
   const formFields = getFormFields(contentType);
 
   useEffect(() => {
     setFormData(initialData || {});
     setErrors({});
+    setFilesToDelete([]);
+    setFilesToUpload({});
   }, [initialData]);
 
   const handleChange = (name: string, value: string) => {
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+  };
+
+  const handleFileChange = (field: string, file: File | null, oldKey: string | undefined) => {
+    if (file) {
+      // Track new file for upload
+      setFilesToUpload(prev => ({ ...prev, [field]: file }));
+      // Track old key for deletion
+      if (oldKey) {
+        setFilesToDelete(prev => [...prev, oldKey]);
+      }
+    } else {
+      // File was deleted, track old key for deletion
+      if (oldKey) {
+        setFilesToDelete(prev => [...prev, oldKey]);
+      }
+      setFilesToUpload(prev => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
     }
   };
 
-  const handleItemsChange = (value: string) => {
-    const items = value.split(',').map(item => item.trim()).filter(item => item);
-    setFormData((prev: any) => ({ ...prev, items }));
+  const handleItemFileChange = (index: number, file: File | null, oldKey: string | undefined) => {
+    if (file) {
+      // Track item file for upload with a unique key
+      const field = `item_${index}`;
+      setFilesToUpload(prev => ({ ...prev, [field]: file }));
+      // Track old key for deletion
+      if (oldKey) {
+        setFilesToDelete(prev => [...prev, oldKey]);
+      }
+    } else {
+      // File was deleted, track old key for deletion
+      if (oldKey) {
+        setFilesToDelete(prev => [...prev, oldKey]);
+      }
+      const field = `item_${index}`;
+      setFilesToUpload(prev => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
+    }
+  };
+
+  const handleItemFilesToDelete = (fileUrls: string[]) => {
+    setFilesToDelete(prev => [...prev, ...fileUrls]);
+  };
+
+  const deleteFilesFromR2 = async (fileUrls: string[]): Promise<void> => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    const deletePromises = fileUrls.map(async (fileUrl) => {
+      try {
+        await fetch(`${API_URL}/files/${fileUrl}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error('Error al eliminar archivo:', fileUrl, error);
+      }
+    });
+
+    await Promise.all(deletePromises);
   };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     formFields.forEach(field => {
-      if (field.required && !formData[field.name]) {
+      const hasPendingUpload = filesToUpload[field.name] !== undefined;
+      const hasValue = formData[field.name] !== undefined && formData[field.name] !== '';
+      if (field.required && !hasValue && !hasPendingUpload) {
         newErrors[field.name] = `${field.label} es requerido`;
       }
     });
@@ -151,13 +222,61 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
 
   const handleSave = async () => {
     if (!validate()) return;
-    
+
     setIsSaving(true);
     try {
-      await onSave(formData);
+      // Upload new files first
+      const uploadPromises = Object.entries(filesToUpload).map(async ([field, file]) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error al subir');
+        }
+
+        const data = await response.json();
+        return { field, key: data.key };
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+
+      // Update formData with uploaded file keys
+      const updatedFormData = { ...formData };
+      uploadedFiles.forEach(({ field, key }) => {
+        if (field.startsWith('item_')) {
+          // This is an item file, update the items array
+          const index = parseInt(field.replace('item_', ''));
+          if (updatedFormData.items && updatedFormData.items[index] !== undefined) {
+            const parts = updatedFormData.items[index].split('|');
+            parts[1] = key; // Replace the file key
+            updatedFormData.items[index] = parts.join('|');
+          }
+        } else {
+          // This is a regular field
+          updatedFormData[field] = key;
+        }
+      });
+
+      // Delete old files marked for deletion
+      if (filesToDelete.length > 0) {
+        await deleteFilesFromR2(filesToDelete);
+      }
+
+      // Save the card data with updated file keys
+      await onSave(updatedFormData);
+      closeDialog();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al guardar';
-      alert(errorMessage);
+      console.error('Error al guardar:', error);
+      throw error;
     } finally {
       setIsSaving(false);
     }
@@ -199,29 +318,14 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
                   ))}
                 </TextField>
               ) : field.type === 'items' ? (
-                <Box>
-                  <TextField
-                    fullWidth
-                    label={field.label}
-                    value={formData.items?.join(', ') || ''}
-                    onChange={(e) => handleItemsChange(e.target.value)}
-                    helperText="Separa los requisitos con comas"
-                    multiline
-                    rows={2}
-                  />
-                  {formData.items && formData.items.length > 0 && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Requisitos:
-                      </Typography>
-                      <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                        {formData.items.map((item: string, idx: number) => (
-                          <Chip key={idx} label={item} size="small" />
-                        ))}
-                      </Stack>
-                    </Box>
-                  )}
-                </Box>
+                <DynamicItemsInput
+                  label={field.label}
+                  value={formData.items || []}
+                  onChange={(items) => setFormData((prev: any) => ({ ...prev, items }))}
+                  placeholder="Ingresa un valor"
+                  onFilesToDelete={handleItemFilesToDelete}
+                  onItemFileChange={handleItemFileChange}
+                />
               ) : field.type === 'date' ? (
                 <TextField
                   fullWidth
@@ -235,29 +339,13 @@ const AddEditDialogContent: React.FC<AddEditDialogContentProps> = ({
                   InputLabelProps={{ shrink: true }}
                 />
               ) : field.type === 'image' ? (
-                <Box>
-                  <TextField
-                    fullWidth
-                    label={field.label}
-                    value={formData[field.name] || ''}
-                    onChange={(e) => handleChange(field.name, e.target.value)}
-                    required={field.required}
-                    error={!!errors[field.name]}
-                    helperText={errors[field.name]}
-                  />
-                  {formData[field.name] && (
-                    <Box sx={{ mt: 1 }}>
-                      <img
-                        src={formData[field.name]}
-                        alt="Preview"
-                        style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </Box>
-                  )}
-                </Box>
+                <ImageUpload
+                  value={formData[field.name]}
+                  onChange={(key: string | undefined) => handleChange(field.name, key || '')}
+                  label={field.label}
+                  error={errors[field.name]}
+                  onFileChange={(file, oldKey) => handleFileChange(field.name, file, oldKey)}
+                />
               ) : (
                 <TextField
                   fullWidth

@@ -5,10 +5,19 @@ import {
   verifyToken,
   generatePayload,
 } from './auth';
+import {
+  generateUniqueFilename,
+  isValidImageType,
+  isValidFileType,
+  isValidFileSize,
+  getContentType,
+} from './r2';
 
 interface Env {
   asada_suerre_db: D1Database;
   JWT_SECRET: string;
+  asada_suerre_images: R2Bucket;
+  IMAGE_BASE_URL: string;
 }
 
 // Helper function to parse JSON body
@@ -913,7 +922,111 @@ export default {
       return upsertAboutContent(request, env, type);
     }
 
+    // ==================== FILE STORAGE ROUTES ====================
+    if (path === '/upload' && method === 'POST') {
+      return uploadFile(request, env);
+    }
+    if (path.startsWith('/files/') && method === 'DELETE') {
+      const key = path.split('/')[2];
+      return deleteFile(request, env, key);
+    }
+    if (path.startsWith('/images/') && method === 'GET') {
+      const key = path.split('/')[2];
+      return serveImage(request, env, key);
+    }
+
     // 404 for unknown routes
     return errorResponse('Not found', 404);
   },
 };
+
+// ==================== FILE STORAGE ROUTES ====================
+
+// Upload file endpoint
+async function uploadFile(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file) {
+      return errorResponse('No file provided', 400);
+    }
+
+    // Check if it's a File object (not a string)
+    if (typeof file === 'string') {
+      return errorResponse('Invalid file provided', 400);
+    }
+
+    // Cast to File since we've verified it's not a string
+    const imageFile = file as File;
+
+    // Validate file type (accept both images and documents)
+    if (!isValidFileType(imageFile.type)) {
+      return errorResponse('Invalid file type. Allowed types: JPEG, PNG, WebP, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV', 400);
+    }
+
+    // Validate file size
+    if (!isValidFileSize(imageFile.size)) {
+      return errorResponse('File too large. Maximum size is 10MB.', 400);
+    }
+
+    // Generate unique filename
+    const filename = generateUniqueFilename(imageFile.name);
+    const contentType = getContentType(filename);
+
+    // Store file in R2
+    await env.asada_suerre_images.put(filename, imageFile.stream(), {
+      httpMetadata: {
+        contentType,
+        cacheControl: 'public, max-age=31536000', // Cache for 1 year
+      },
+    });
+
+    return jsonResponse({ key: filename }, 201);
+  } catch (error) {
+    console.error('Upload error:', error);
+    return errorResponse('Failed to upload file', 500);
+  }
+}
+
+// Delete file endpoint
+async function deleteFile(request: Request, env: Env, key: string): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('Unauthorized', 401);
+  }
+
+  try {
+    await env.asada_suerre_images.delete(key);
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.error('Delete error:', error);
+    return errorResponse('Failed to delete file', 500);
+  }
+}
+
+// Serve image endpoint (for local development)
+async function serveImage(request: Request, env: Env, key: string): Promise<Response> {
+  try {
+    const object = await env.asada_suerre_images.get(key);
+
+    if (!object) {
+      return errorResponse('Image not found', 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('Cache-Control', 'public, max-age=31536000');
+    headers.set('Access-Control-Allow-Origin', '*');
+
+    return new Response(object.body, { headers });
+  } catch (error) {
+    console.error('Serve image error:', error);
+    return errorResponse('Failed to serve image', 500);
+  }
+}

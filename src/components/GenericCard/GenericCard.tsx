@@ -26,9 +26,122 @@ import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useDialog } from '../index';
 import { memo, useCallback } from 'react';
+import { getImageUrl } from '../../services/dataService';
 import './GenericCard.scss';
+
+// Helper function to get text from pipe-delimited string
+function getItemText(item: string): string {
+  return item.split('|')[0];
+}
+
+// Helper function to get file URL from pipe-delimited string
+function getItemFileUrl(item: string): string | undefined {
+  const parts = item.split('|');
+  return parts.length > 1 ? parts[1] : undefined;
+}
+
+// Helper function to check if URL is external
+function isExternalUrl(url?: string): boolean {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+// Helper function to extract all R2 file URLs from card data
+function extractFileUrls(data: any): string[] {
+  const fileUrls: string[] = [];
+  
+  // Extract image URL
+  if (data.image && !isExternalUrl(data.image)) {
+    fileUrls.push(data.image);
+  }
+  
+  // Extract file URLs from items (pipe-delimited format)
+  if (data.items && Array.isArray(data.items)) {
+    data.items.forEach((item: string) => {
+      const parts = item.split('|');
+      if (parts.length > 1) {
+        const fileUrl = parts[1];
+        if (fileUrl && !isExternalUrl(fileUrl)) {
+          fileUrls.push(fileUrl);
+        }
+      }
+    });
+  }
+  
+  return fileUrls;
+}
+
+// Helper function to delete files from R2
+async function deleteFilesFromR2(fileUrls: string[]): Promise<void> {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+  const token = localStorage.getItem('auth_token');
+  if (!token) return;
+
+  const deletePromises = fileUrls.map(async (fileUrl) => {
+    try {
+      await fetch(`${API_URL}/files/${fileUrl}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.error('Error al eliminar archivo:', fileUrl, error);
+    }
+  });
+
+  await Promise.all(deletePromises);
+}
+
+// Helper function to get file extension from file URL
+function getFileExtension(fileUrl: string): string {
+  const parts = fileUrl.split('.');
+  return parts.length > 1 ? `.${parts[parts.length - 1]}` : '';
+}
+
+// Helper function to download file with custom filename
+async function downloadFile(fileUrl: string, filename: string): Promise<void> {
+  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
+  const extension = getFileExtension(fileUrl);
+  const fullUrl = `${IMAGE_BASE_URL}/${fileUrl}`;
+  
+  try {
+    const response = await fetch(fullUrl);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Error al descargar:', error);
+    // Fallback to opening in new tab
+    window.open(fullUrl, '_blank');
+  }
+}
+
+// Helper function to format date in user-friendly format
+function formatDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+}
 
 // Types for different card variants
 export interface GenericCardData {
@@ -239,21 +352,74 @@ const GenericCard: React.FC<GenericCardProps> = ({
             {data.items && (
               <Paper variant="outlined" sx={{ p: 2, backgroundColor: "grey.50" }}>
                 <List dense>
-                  {data.items.map((req: string, reqIndex: number) => (
-                    <ListItem key={reqIndex} sx={{ px: 0, py: 0.5 }}>
-                      <ListItemIcon sx={{ minWidth: 24 }}>
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            backgroundColor: "primary.main",
+                  {(() => {
+                    const textOnlyItems = data.items.filter((item: string) => !item.includes('|'));
+                    const textWithFileItems = data.items.filter((item: string) => item.includes('|'));
+                    const allItems = [...textOnlyItems, ...textWithFileItems];
+                    return allItems.map((req: string, reqIndex: number) => {
+                      const text = getItemText(req);
+                      const fileUrl = getItemFileUrl(req);
+                      const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
+                      return (
+                        <ListItem 
+                          key={reqIndex} 
+                          sx={{ 
+                            px: 0, 
+                            py: 0.5,
+                            cursor: fileUrl ? 'pointer' : 'default',
+                            '&:hover': fileUrl ? {
+                              backgroundColor: 'action.hover',
+                            } : {},
                           }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText primary={req} primaryTypographyProps={{ variant: "body2" }} />
-                    </ListItem>
-                  ))}
+                          onClick={() => {
+                            if (fileUrl) {
+                              if (isExternalUrl(fileUrl)) {
+                                // Open external URL in new tab
+                                window.open(fileUrl, '_blank');
+                              } else {
+                                // Download file from R2
+                                downloadFile(fileUrl, text);
+                              }
+                            }
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 24 }}>
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: "50%",
+                                backgroundColor: "primary.main",
+                              }}
+                            />
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={text} 
+                            primaryTypographyProps={{ 
+                              variant: "body2",
+                              sx: fileUrl ? {
+                                color: 'primary.main',
+                                textDecoration: 'underline',
+                              } : {},
+                            }}
+                            secondary={fileUrl && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                {isExternalUrl(fileUrl) ? (
+                                  <OpenInNewIcon fontSize="small" sx={{ fontSize: 16 }} />
+                                ) : (
+                                  <DownloadIcon fontSize="small" sx={{ fontSize: 16 }} />
+                                )}
+                                <Typography variant="caption" color="text.secondary">
+                                  {isExternalUrl(fileUrl) ? 'Hacer clic para visitar' : 'Hacer clic para descargar'}
+                                </Typography>
+                              </Box>
+                            )}
+                            secondaryTypographyProps={{ component: 'div' }}
+                          />
+                        </ListItem>
+                      );
+                    });
+                  })()}
                 </List>
               </Paper>
             )}
@@ -328,10 +494,17 @@ const GenericCard: React.FC<GenericCardProps> = ({
     onEdit?.();
   }, [onEdit]);
 
-  const handleDelete = useCallback((e: React.MouseEvent) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Delete files from R2 before removing the card
+    const fileUrls = extractFileUrls(data);
+    if (fileUrls.length > 0) {
+      await deleteFilesFromR2(fileUrls);
+    }
+    
     onDelete?.();
-  }, [onDelete]);
+  }, [data, onDelete]);
 
   return (
     <Box sx={{ position: 'relative' }}>
@@ -348,7 +521,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
         <CardMedia
           component="img"
           alt={data.title}
-          image={data.image}
+          image={getImageUrl(data.image) || ''}
           loading="lazy"
           decoding="async"
           sx={{
@@ -429,7 +602,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
             color="text.secondary"
             gutterBottom
           >
-            {data.date}
+            {formatDate(data.date)}
           </StyledTypography>
         )}
 

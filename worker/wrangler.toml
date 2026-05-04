@@ -8,9 +8,15 @@ binding = "asada_suerre_db"
 database_name = "asada-suerre-db"
 database_id = "2e128980-9cfb-4fe0-9526-c9b6880f2a1d"
 
+# R2 Bucket binding for images
+[[r2_buckets]]
+bucket_name = "asada-suerre-images"
+binding = "asada_suerre_images"
+
 # Local development configuration
 [vars]
 ENVIRONMENT = "local"
+IMAGE_BASE_URL = "http://localhost:8787/images"
 
 # JWT Secret for authentication (CHANGE THIS IN PRODUCTION!)
 # Generate a secure random string: openssl rand -base64 32

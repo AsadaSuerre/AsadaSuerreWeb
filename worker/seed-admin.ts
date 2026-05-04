@@ -60,8 +60,8 @@ async function generatePasswordHash(password: string): Promise<string> {
 // Or use the Cloudflare Workers dashboard to execute this
 
 async function main() {
-  const username = 'admin';
-  const password = 'change-this-password-immediately'; // CHANGE THIS!
+  const username = 'user';
+  const password = 'pass'; // CHANGE THIS!
   
   const passwordHash = await generatePasswordHash(password);
   
@@ -73,7 +73,7 @@ async function main() {
 }
 
 // Uncomment to run
-// main().catch(console.error);
+main().catch(console.error);
 
 // Manual SQL command for wrangler:
 // npx wrangler d1 execute asada-suerre-db --local --command="INSERT INTO admins (username, password_hash) VALUES ('admin', 'YOUR_HASH_HERE')"

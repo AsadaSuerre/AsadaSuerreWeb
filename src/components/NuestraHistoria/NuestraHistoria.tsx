@@ -19,12 +19,12 @@ import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import { DataService } from '../../services/dataService';
+import { getImageUrl } from '../../services/dataService';
 import { iconMap } from '../GenericCard/GenericCard';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import Loading from '../Loading/Loading';
-import FullScreenDialog from '../FullScreenDialog/FullScreenDialog';
 import './NuestraHistoria.scss';
 
 // Hook for number animation
@@ -125,8 +125,6 @@ export default function NuestraHistoria() {
   const [mission, setMission] = React.useState<{ title: string; content: string } | null>(null);
   const [vision, setVision] = React.useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [selectedTimelineItem, setSelectedTimelineItem] = React.useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const { isAuthenticated } = useAuth();
   const { openDialog, closeDialog } = useDialog();
 
@@ -299,13 +297,27 @@ export default function NuestraHistoria() {
   };
 
   const handleTimelineItemClick = (item: any) => {
-    setSelectedTimelineItem(item);
-    setIsDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setSelectedTimelineItem(null);
+    openDialog({
+      title: item.title,
+      image: item.image,
+      icon: item.icon,
+      content: (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {item.year && (
+            <Typography variant="h6" color="text.secondary">
+              {item.year}
+            </Typography>
+          )}
+          {item.description && (
+            <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+              {item.description}
+            </Typography>
+          )}
+        </Box>
+      ),
+      maxWidth: 'lg',
+      fullWidth: true
+    });
   };
 
   if (loading) {
@@ -385,7 +397,7 @@ export default function NuestraHistoria() {
                     {item.image && (
                       <Box
                         component="img"
-                        src={item.image}
+                        src={getImageUrl(item.image) || ''}
                         alt={item.title}
                         loading="lazy"
                         decoding="async"
@@ -505,31 +517,6 @@ export default function NuestraHistoria() {
           )}
         </Grid>
       </Grid>
-      
-      {/* FullScreenDialog for timeline items */}
-      {isDialogOpen && selectedTimelineItem && (
-        <FullScreenDialog
-          key={selectedTimelineItem.id}
-          open={isDialogOpen}
-          onClose={handleDialogClose}
-          title={selectedTimelineItem.title}
-          image={selectedTimelineItem.image}
-          icon={selectedTimelineItem.icon}
-        >
-          {selectedTimelineItem.year && (
-            <Typography
-              variant="h5"
-              color="primary"
-              sx={{ fontWeight: "bold", mb: 2 }}
-            >
-              {selectedTimelineItem.year}
-            </Typography>
-          )}
-          <Typography variant="body1" paragraph>
-            {selectedTimelineItem.description}
-          </Typography>
-        </FullScreenDialog>
-      )}
     </Container>
   );
 }

@@ -9,6 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { memo } from 'react';
+import { getImageUrl } from '../../services/dataService';
 
 export interface CarouselSlideData {
   image: string;
@@ -139,7 +140,7 @@ function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed
               >
                 <Box
                   component="img"
-                  src={slide.image}
+                  src={getImageUrl(slide.image) || ''}
                   alt={`Slide ${index + 1}`}
                   loading="lazy"
                   decoding="async"

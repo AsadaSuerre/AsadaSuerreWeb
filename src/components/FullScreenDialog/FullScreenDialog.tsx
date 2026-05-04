@@ -17,6 +17,7 @@ import ExpandIcon from '@mui/icons-material/Expand';
 import CompressIcon from '@mui/icons-material/Compress';
 import { TransitionProps } from '@mui/material/transitions';
 import { iconMap } from '../GenericCard/GenericCard';
+import { getImageUrl } from '../../services/dataService';
 
 export interface FullScreenDialogProps {
   open: boolean;
@@ -87,7 +88,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           display: 'flex',
           flexDirection: isMd ? 'row' : 'column',
           overflow: 'hidden',
-          maxHeight: isMd ? '90vh' : '100vh',
+          height: isMd ? '66vh' : '100vh',
         }
       }}
     >
@@ -99,7 +100,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
               : '100%',
             height: isXs
               ? (isImageExpanded ? '100vh' : 'auto')
-              : (isImageExpanded ? '100%' : '100%'),
+              : 'auto',
             position: 'relative',
             overflow: 'hidden',
             transition: 'width 0.6s ease-in-out, height 0.6s ease-in-out',
@@ -107,7 +108,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
         >
           <Box
             component="img"
-            src={image}
+            src={getImageUrl(image) || ''}
             alt={title || 'Dialog header'}
             loading="lazy"
             decoding="async"
@@ -115,7 +116,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
             sx={{
               width: '100%',
               height: '100%',
-              objectFit: 'contain',
+              objectFit: isXs && isImageExpanded ? 'contain' : 'fill',
               display: 'block',
               cursor: isXs ? 'pointer' : 'default',
             }}
@@ -147,7 +148,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           display: isXs && isImageExpanded ? 'none' : 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          maxHeight: isMd ? '90vh' : 'auto',
+          height: isMd ? '66vh' : 'auto',
         }}
       >
         {title && (

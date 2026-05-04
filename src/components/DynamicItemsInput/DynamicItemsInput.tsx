@@ -1,0 +1,269 @@
+import React, { useState } from 'react';
+import { Box, TextField, IconButton, Stack, Radio, RadioGroup, FormControlLabel, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import FileUpload from '../FileUpload/FileUpload';
+import LinkIcon from '@mui/icons-material/Link';
+
+export interface DynamicItemsInputProps {
+  label?: string;
+  value: string[];
+  onChange: (items: string[]) => void;
+  placeholder?: string;
+  onFilesToDelete?: (fileUrls: string[]) => void;
+  onItemFileChange?: (index: number, file: File | null, oldKey: string | undefined) => void;
+}
+
+const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
+  label,
+  value = [],
+  onChange,
+  placeholder = 'Ingresa un valor',
+  onFilesToDelete,
+  onItemFileChange
+}) => {
+  // Internal state to track file URLs for each item
+  const [fileUrls, setFileUrls] = useState<Record<number, string>>({});
+  // Internal state to track input type (file or url) for each item
+  const [inputTypes, setInputTypes] = useState<Record<number, 'file' | 'url'>>({});
+  // Track original file URLs to know which ones to delete
+  const [originalFileUrls, setOriginalFileUrls] = useState<Record<number, string>>({});
+  // Track local files for each item
+  const [localFiles, setLocalFiles] = useState<Record<number, File>>({});
+
+  // Parse text from pipe-delimited string
+  const parseText = (str: string): string => {
+    return str.split('|')[0];
+  };
+
+  // Parse file URL from pipe-delimited string
+  const parseFileUrl = (str: string): string | undefined => {
+    const parts = str.split('|');
+    return parts.length > 1 ? parts[1] : undefined;
+  };
+
+  // Join text and file URL with pipe
+  const joinTextAndFile = (text: string, fileUrl?: string): string => {
+    if (fileUrl) {
+      return `${text}|${fileUrl}`;
+    }
+    return text;
+  };
+
+  // Determine if a URL is external (starts with http/https)
+  const isExternalUrl = (url?: string): boolean => {
+    if (!url) return false;
+    return url.startsWith('http://') || url.startsWith('https://');
+  };
+
+  // Auto-detect input type when value changes
+  React.useEffect(() => {
+    value.forEach((item, index) => {
+      const fileUrl = parseFileUrl(item);
+      if (fileUrl && !isExternalUrl(fileUrl)) {
+        // Track original file URLs (only for R2 files, not external URLs)
+        setOriginalFileUrls(prev => ({ ...prev, [index]: fileUrl }));
+      }
+      if (fileUrl && isExternalUrl(fileUrl)) {
+        setInputTypes(prev => ({ ...prev, [index]: 'url' }));
+      } else if (!inputTypes[index]) {
+        setInputTypes(prev => ({ ...prev, [index]: 'file' }));
+      }
+    });
+  }, [value]);
+
+  const handleChange = (index: number, newText: string) => {
+    const fileUrl = fileUrls[index] || parseFileUrl(value[index]);
+    const updatedItems = [...value];
+    updatedItems[index] = joinTextAndFile(newText, fileUrl);
+    onChange(updatedItems);
+  };
+
+  const handleFileChange = (index: number, fileUrl: string | undefined) => {
+    const updatedFileUrls = { ...fileUrls, [index]: fileUrl || '' };
+    setFileUrls(updatedFileUrls);
+
+    const text = parseText(value[index]);
+    const updatedItems = [...value];
+    updatedItems[index] = joinTextAndFile(text, fileUrl);
+    onChange(updatedItems);
+  };
+
+  const handleItemFileChange = (index: number, file: File | null, oldKey: string | undefined) => {
+    if (file) {
+      // Track local file for upload
+      setLocalFiles(prev => ({ ...prev, [index]: file }));
+      // Track old key for deletion
+      if (oldKey && !isExternalUrl(oldKey)) {
+        if (onFilesToDelete) {
+          onFilesToDelete([oldKey]);
+        }
+      }
+    } else {
+      // File was deleted, track old key for deletion
+      if (oldKey && !isExternalUrl(oldKey)) {
+        if (onFilesToDelete) {
+          onFilesToDelete([oldKey]);
+        }
+      }
+      setLocalFiles(prev => {
+        const updated = { ...prev };
+        delete updated[index];
+        return updated;
+      });
+    }
+    
+    // Also notify parent component for upload tracking
+    if (onItemFileChange) {
+      onItemFileChange(index, file, oldKey);
+    }
+  };
+
+  const handleUrlChange = (index: number, url: string) => {
+    const updatedFileUrls = { ...fileUrls, [index]: url };
+    setFileUrls(updatedFileUrls);
+
+    const text = parseText(value[index]);
+    const updatedItems = [...value];
+    updatedItems[index] = joinTextAndFile(text, url);
+    onChange(updatedItems);
+  };
+
+  const handleInputTypeChange = (index: number, type: 'file' | 'url') => {
+    const currentType = inputTypes[index] || 'file';
+    const currentFileUrl = fileUrls[index] || parseFileUrl(value[index]);
+    
+    // If switching from file to URL and there's an R2 file, mark it for deletion
+    if (currentType === 'file' && type === 'url' && currentFileUrl && !isExternalUrl(currentFileUrl)) {
+      if (onFilesToDelete) {
+        onFilesToDelete([currentFileUrl]);
+      }
+    }
+    
+    const updatedInputTypes = { ...inputTypes, [index]: type };
+    setInputTypes(updatedInputTypes);
+    
+    // Don't clear the file/url when switching types, just change the type
+    // This allows users to toggle between views without losing their data
+  };
+
+  const handleAdd = () => {
+    onChange([...value, '']);
+  };
+
+  const handleRemove = (index: number) => {
+    const currentFileUrl = fileUrls[index] || parseFileUrl(value[index]);
+    
+    // Track file for deletion (will be deleted on save)
+    if (currentFileUrl && !isExternalUrl(currentFileUrl)) {
+      if (onFilesToDelete) {
+        onFilesToDelete([currentFileUrl]);
+      }
+    }
+    
+    const updatedItems = value.filter((_, i) => i !== index);
+    const updatedFileUrls = { ...fileUrls };
+    delete updatedFileUrls[index];
+    setFileUrls(updatedFileUrls);
+    
+    const updatedInputTypes = { ...inputTypes };
+    delete updatedInputTypes[index];
+    setInputTypes(updatedInputTypes);
+    
+    const updatedOriginalFileUrls = { ...originalFileUrls };
+    delete updatedOriginalFileUrls[index];
+    setOriginalFileUrls(updatedOriginalFileUrls);
+
+    const updatedLocalFiles = { ...localFiles };
+    delete updatedLocalFiles[index];
+    setLocalFiles(updatedLocalFiles);
+    
+    onChange(updatedItems);
+  };
+
+  return (
+    <Box>
+      {label && (
+        <Box sx={{ mb: 1 }}>
+          <label style={{ fontWeight: 500 }}>{label}</label>
+        </Box>
+      )}
+      <Stack spacing={2}>
+        {value.map((item, index) => {
+          const currentInputType = inputTypes[index] || 'file';
+          const currentFileUrl = fileUrls[index] || parseFileUrl(item);
+          
+          return (
+            <Box key={index} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <TextField
+                  fullWidth
+                  value={parseText(item)}
+                  onChange={(e) => handleChange(index, e.target.value)}
+                  placeholder={placeholder}
+                  size="small"
+                />
+                <IconButton
+                  onClick={() => handleRemove(index)}
+                  size="small"
+                  color="error"
+                  sx={{ mt: 0.5 }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              
+              <RadioGroup
+                row
+                value={currentInputType}
+                onChange={(e) => handleInputTypeChange(index, e.target.value as 'file' | 'url')}
+                sx={{ alignItems: 'center' }}
+              >
+                <FormControlLabel 
+                  value="file" 
+                  control={<Radio size="small" />} 
+                  label={<Typography variant="caption">File</Typography>}
+                />
+                <FormControlLabel 
+                  value="url" 
+                  control={<Radio size="small" />} 
+                  label={<Typography variant="caption">URL</Typography>}
+                />
+              </RadioGroup>
+              
+              {currentInputType === 'file' ? (
+                <FileUpload
+                  label="Archivo (opcional)"
+                  value={currentFileUrl}
+                  onChange={(fileUrl) => handleFileChange(index, fileUrl)}
+                  onFileChange={(file, oldKey) => handleItemFileChange(index, file, oldKey)}
+                  showDownload={false}
+                />
+              ) : (
+                <TextField
+                  fullWidth
+                  value={currentFileUrl || ''}
+                  onChange={(e) => handleUrlChange(index, e.target.value)}
+                  placeholder="Ingrese URL (ej. https://ejemplo.com/archivo.pdf)"
+                  size="small"
+                  InputProps={{
+                    startAdornment: <LinkIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                  }}
+                />
+              )}
+            </Box>
+          );
+        })}
+        <IconButton
+          onClick={handleAdd}
+          color="primary"
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          <AddIcon />
+        </IconButton>
+      </Stack>
+    </Box>
+  );
+};
+
+export default DynamicItemsInput;

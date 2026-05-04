@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const DATA_DIR = path.join(__dirname, '..', 'src', 'assets', 'data');
+const DATA_DIR = path.join(__dirname, 'data');
 const API_URL = 'http://localhost:8787';
 const ADMIN_USERNAME = 'user';
 const ADMIN_PASSWORD = 'pass';
@@ -26,14 +26,14 @@ interface Card {
   icon?: string;
   items?: string[];
   url?: string;
-  googleMapsUrl?: string;
+  google_maps_url?: string;
   variant: string;
 }
 
 interface Contacts {
-  whatsappPhoneInfo?: string;
-  whatsappPhoneSupport?: string;
-  facebookUrl?: string;
+  whatsapp_phone_info?: string;
+  whatsapp_phone_support?: string;
+  facebook_url?: string;
 }
 
 interface HomeSlide {
@@ -122,6 +122,10 @@ function readJsonFile<T>(filename: string): T {
 
 // Migrate cards
 async function migrateCards(cards: Card[]): Promise<void> {
+  if (cards.length === 0) {
+    console.log('✓ No cards to migrate (empty array)');
+    return;
+  }
   for (const card of cards) {
     try {
       await apiRequest('/cards', {
@@ -165,6 +169,10 @@ async function migrateHomeSlides(slides: HomeSlide[]): Promise<void> {
 
 // Migrate timeline items
 async function migrateTimelineItems(items: TimelineItem[]): Promise<void> {
+  if (items.length === 0) {
+    console.log('✓ No timeline items to migrate (empty array)');
+    return;
+  }
   for (const item of items) {
     try {
       await apiRequest('/timeline', {

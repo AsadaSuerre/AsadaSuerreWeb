@@ -30,7 +30,7 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
       await login(username, password);
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Error de inicio de sesión');
     } finally {
       setIsLoading(false);
     }

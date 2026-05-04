@@ -1,4 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
+
+// Helper function to construct image URL from key
+export function getImageUrl(key: string | null | undefined): string | null {
+  if (!key) return null;
+  return `${IMAGE_BASE_URL}/${key}`;
+}
 
 // Helper function to translate technical errors to user-friendly messages
 function getErrorMessage(error: any): string {
@@ -425,5 +432,34 @@ export const DataService = {
       method: 'PUT',
       body: JSON.stringify(contactsData),
     }, true);
+  },
+
+  uploadFile: async (file: File): Promise<{ key: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  deleteFile: async (key: string): Promise<void> => {
+    await fetch(`${API_URL}/files/${key}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+    });
   },
 };
