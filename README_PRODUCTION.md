@@ -42,14 +42,14 @@ This repository contains the production deployment configuration for the ASADA S
 - Images: Local R2 (via Wrangler)
 
 ### Staging
-- Frontend: `https://staging.asadasuerre.com`
-- Worker: `https://api-staging.asadasuerre.com`
+- Frontend: `https://staging.acueductosuerre.com`
+- Worker: `https://api-staging.acueductosuerre.com`
 - Database: `asada-suerre-db-staging`
 - Images: `asada-suerre-images-staging`
 
 ### Production
-- Frontend: `https://www.asadasuerre.com`
-- Worker: `https://api.asadasuerre.com`
+- Frontend: `https://www.acueductosuerre.com`
+- Worker: `https://api.acueductosuerre.com`
 - Database: `asada-suerre-db-prod`
 - Images: `asada-suerre-images-prod`
 
@@ -151,10 +151,10 @@ wrangler tail --env production
 ### Health Check
 ```bash
 # Test API health
-curl https://api.asadasuerre.com/health
+curl https://api.acueductosuerre.com/health
 
 # Test frontend
-curl https://www.asadasuerre.com
+curl https://www.acueductosuerre.com
 ```
 
 ## Troubleshooting

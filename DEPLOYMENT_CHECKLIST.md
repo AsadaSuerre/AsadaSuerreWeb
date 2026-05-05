@@ -43,7 +43,7 @@ Use this checklist to ensure a safe and complete production deployment.
 - [ ] Created staging R2 bucket: `wrangler r2 bucket create asada-suerre-images-staging`
 - [ ] Enabled public access on production bucket
 - [ ] Enabled public access on staging bucket
-- [ ] Configured custom domain for CDN (cdn.asadasuerre.com)
+- [ ] Configured custom domain for CDN (cdn.acueductosuerre.com)
 - [ ] Uploaded initial images to production bucket
 - [ ] Uploaded initial images to staging bucket
 - [ ] Verified image URLs work correctly
@@ -103,9 +103,9 @@ Use this checklist to ensure a safe and complete production deployment.
 ## Post-Deployment Verification
 
 ### Health Checks
-- [ ] Frontend loads at https://www.asadasuerre.com
-- [ ] API responds at https://api.asadasuerre.com
-- [ ] CDN serves images at https://cdn.asadasuerre.com
+- [ ] Frontend loads at https://www.acueductosuerre.com
+- [ ] API responds at https://api.acueductosuerre.com
+- [ ] CDN serves images at https://cdn.acueductosuerre.com
 - [ ] Health check endpoint responds
 - [ ] Authentication login works
 - [ ] File upload works

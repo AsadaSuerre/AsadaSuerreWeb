@@ -190,7 +190,7 @@ async function getCachedData(key: string, fetcher: () => Promise<any>, ttl: numb
 
 Configure R2 with Cloudflare CDN:
 1. Enable public access on R2 bucket
-2. Add custom domain (cdn.asadasuerre.com)
+2. Add custom domain (cdn.acueductosuerre.com)
 3. Enable Cloudflare caching rules
 
 ## Security Headers
@@ -217,7 +217,7 @@ Implement CSP for additional security:
 ```
 # CSP header
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.asadasuerre.com
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.acueductosuerre.com
 ```
 
 ## Logging Strategy

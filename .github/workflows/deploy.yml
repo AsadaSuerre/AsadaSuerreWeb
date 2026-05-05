@@ -57,7 +57,7 @@ jobs:
     
     environment:
       name: production
-      url: https://api.asadasuerre.com
+      url: https://api.acueductosuerre.com
     
     steps:
       - name: Checkout code
@@ -97,7 +97,7 @@ jobs:
     
     environment:
       name: staging
-      url: https://api-staging.asadasuerre.com
+      url: https://api-staging.acueductosuerre.com
     
     steps:
       - name: Checkout code
@@ -132,7 +132,7 @@ jobs:
     
     environment:
       name: production
-      url: https://www.asadasuerre.com
+      url: https://www.acueductosuerre.com
     
     steps:
       - name: Checkout code
@@ -177,7 +177,7 @@ jobs:
     
     environment:
       name: staging
-      url: https://staging.asadasuerre.com
+      url: https://staging.acueductosuerre.com
     
     steps:
       - name: Checkout code

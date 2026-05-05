@@ -11,7 +11,7 @@ compatibility_date = "2024-01-01"
 [env.production]
 name = "asada-suerre-api-prod"
 routes = [
-  { pattern = "api.asadasuerre.com/*", zone_name = "asadasuerre.com" }
+  { pattern = "api.acueductosuerre.com/*", zone_name = "acueductosuerre.com" }
 ]
 
 # Production D1 binding
@@ -28,13 +28,13 @@ binding = "asada_suerre_images"
 # Production environment variables
 [env.production.vars]
 ENVIRONMENT = "production"
-IMAGE_BASE_URL = "https://cdn.asadasuerre.com"
+IMAGE_BASE_URL = "https://cdn.acueductosuerre.com"
 
 # Staging environment
 [env.staging]
 name = "asada-suerre-api-staging"
 routes = [
-  { pattern = "api-staging.asadasuerre.com/*", zone_name = "asadasuerre.com" }
+  { pattern = "api-staging.acueductosuerre.com/*", zone_name = "acueductosuerre.com" }
 ]
 
 # Staging D1 binding
@@ -51,7 +51,7 @@ binding = "asada_suerre_images"
 # Staging environment variables
 [env.staging.vars]
 ENVIRONMENT = "staging"
-IMAGE_BASE_URL = "https://cdn-staging.asadasuerre.com"
+IMAGE_BASE_URL = "https://cdn-staging.acueductosuerre.com"
 
 # Local development configuration (default)
 # D1 Database binding

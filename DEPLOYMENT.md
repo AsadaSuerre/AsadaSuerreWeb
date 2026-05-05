@@ -33,7 +33,7 @@ wrangler login
 Replace the placeholder values in `worker/wrangler.toml`:
 - `PRODUCTION_DATABASE_ID` - after creating production D1 database
 - `STAGING_DATABASE_ID` - after creating staging D1 database
-- `asadasuerre.com` - replace with your actual domain
+- `acueductosuerre.com` - replace with your actual domain
 - Update routes patterns with your actual domain
 
 ### 2. Create production D1 databases
@@ -112,7 +112,7 @@ wrangler d1 execute DB_ID --remote --file=migrations/001_add_new_field.sql --env
 1. Go to Cloudflare Dashboard > R2 > asada-suerre-images-prod
 2. Settings > Public Access
 3. Enable "Allow public read access"
-4. Configure custom domain (e.g., cdn.asadasuerre.com)
+4. Configure custom domain (e.g., cdn.acueductosuerre.com)
 
 ### Upload Initial Images
 
@@ -128,7 +128,7 @@ wrangler r2 object put asada-suerre-images-prod/path/to/image.jpg --file=local/p
 
 Store only the relative path in D1 (not full URLs):
 - Good: `news/2024-01-15-image1.jpg`
-- Bad: `https://cdn.asadasuerre.com/news/2024-01-15-image1.jpg`
+- Bad: `https://cdn.acueductosuerre.com/news/2024-01-15-image1.jpg`
 
 The `IMAGE_BASE_URL` environment variable will be prepended at runtime.
 
@@ -185,7 +185,7 @@ wrangler dev
 wrangler tail --env production
 
 # Test API endpoint
-curl https://api.asadasuerre.com/api/cards
+curl https://api.acueductosuerre.com/api/cards
 ```
 
 ## React Frontend Deployment
@@ -205,15 +205,15 @@ curl https://api.asadasuerre.com/api/cards
 
 In Cloudflare Pages project settings:
 ```
-REACT_APP_API_URL=https://api.asadasuerre.com
-REACT_APP_IMAGE_BASE_URL=https://cdn.asadasuerre.com
+REACT_APP_API_URL=https://api.acueductosuerre.com
+REACT_APP_IMAGE_BASE_URL=https://cdn.acueductosuerre.com
 REACT_APP_ENVIRONMENT=production
 ```
 
 #### Configure Custom Domain
 
 1. Pages project > Custom domains
-2. Add domain: `www.asadasuerre.com`
+2. Add domain: `www.acueductosuerre.com`
 3. Configure DNS records as shown by Cloudflare
 
 #### Configure Staging Environment
@@ -221,7 +221,7 @@ REACT_APP_ENVIRONMENT=production
 Create a separate Pages project for staging with:
 - Build command: `npm run build:staging`
 - Environment variables pointing to staging endpoints
-- Domain: `staging.asadasuerre.com`
+- Domain: `staging.acueductosuerre.com`
 
 ### Option 2: Manual Deploy
 
@@ -278,10 +278,10 @@ openssl rand -hex 32
 ### Recommended Domain Structure
 
 ```
-Frontend (Pages):  https://www.asadasuerre.com
-API (Worker):      https://api.asadasuerre.com
-CDN (R2):          https://cdn.asadasuerre.com
-Staging:           https://staging.asadasuerre.com
+Frontend (Pages):  https://www.acueductosuerre.com
+API (Worker):      https://api.acueductosuerre.com
+CDN (R2):          https://cdn.acueductosuerre.com
+Staging:           https://staging.acueductosuerre.com
 ```
 
 ### DNS Configuration
@@ -301,7 +301,7 @@ The routes are already configured in `wrangler.toml`:
 ```toml
 [env.production]
 routes = [
-  { pattern = "api.asadasuerre.com/*", zone_name = "asadasuerre.com" }
+  { pattern = "api.acueductosuerre.com/*", zone_name = "acueductosuerre.com" }
 ]
 ```
 
@@ -317,17 +317,17 @@ Cloudflare automatically provides SSL for all proxied domains. Ensure:
 
 ```bash
 # Test API
-curl https://api.asadasuerre.com/api/cards
-curl https://api.asadasuerre.com/api/contacts
+curl https://api.acueductosuerre.com/api/cards
+curl https://api.acueductosuerre.com/api/contacts
 
 # Test frontend
-curl https://www.asadasuerre.com
+curl https://www.acueductosuerre.com
 
 # Test CDN
-curl https://cdn.asadasuerre.com/path/to/image.jpg
+curl https://cdn.acueductosuerre.com/path/to/image.jpg
 
 # Test authentication
-curl -X POST https://api.asadasuerre.com/api/auth/login \
+curl -X POST https://api.acueductosuerre.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"your-password"}'
 ```
@@ -353,7 +353,7 @@ if (url.pathname === '/health') {
 }
 ```
 
-Test: `curl https://api.asadasuerre.com/health`
+Test: `curl https://api.acueductosuerre.com/health`
 
 ## Rollback Procedure
 

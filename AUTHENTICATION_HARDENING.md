@@ -148,9 +148,9 @@ function addSecurityHeaders(response: Response): Response {
 ```typescript
 // In worker/index.ts
 const ALLOWED_ORIGINS = [
-  'https://www.asadasuerre.com',
-  'https://asadasuerre.com',
-  'https://staging.asadasuerre.com',
+  'https://www.acueductosuerre.com',
+  'https://acueductosuerre.com',
+  'https://staging.acueductosuerre.com',
 ];
 
 function getCorsHeaders(request: Request): Headers {
@@ -427,20 +427,20 @@ function sanitizeInput(input: any): any {
 
 ```bash
 # Test CORS
-curl -H "Origin: https://evil.com" https://api.asadasuerre.com/api/cards
+curl -H "Origin: https://evil.com" https://api.acueductosuerre.com/api/cards
 
 # Test rate limiting
 for i in {1..10}; do
-  curl -X POST https://api.asadasuerre.com/api/auth/login \
+  curl -X POST https://api.acueductosuerre.com/api/auth/login \
     -H "Content-Type: application/json" \
     -d '{"username":"test","password":"wrong"}'
 done
 
 # Test HTTPS
-curl -I http://api.asadasuerre.com  # Should redirect to HTTPS
+curl -I http://api.acueductosuerre.com  # Should redirect to HTTPS
 
 # Test security headers
-curl -I https://api.asadasuerre.com/api/cards
+curl -I https://api.acueductosuerre.com/api/cards
 ```
 
 ## Monitoring and Alerts
