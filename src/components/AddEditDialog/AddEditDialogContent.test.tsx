@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-describe('App', () => {
+describe('AddEditDialogContent', () => {
   it('renders without crashing', () => {
-    render(<div>Mock App</div>);
+    render(<div>Mock AddEditDialogContent</div>);
   });
 });

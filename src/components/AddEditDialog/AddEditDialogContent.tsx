@@ -28,7 +28,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 
 import { iconMap } from '../GenericCard/GenericCard';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8787';
 
 // Icon mapping for dropdown display
 const iconComponentMap: Record<string, React.ElementType> = {

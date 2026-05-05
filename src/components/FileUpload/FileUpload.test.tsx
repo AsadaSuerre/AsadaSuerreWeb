@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-describe('App', () => {
+describe('FileUpload', () => {
   it('renders without crashing', () => {
-    render(<div>Mock App</div>);
+    render(<div>Mock FileUpload</div>);
   });
 });
