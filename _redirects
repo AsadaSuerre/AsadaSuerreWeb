@@ -1,0 +1,5 @@
+# SPA routing - all routes to index.html
+/* /index.html 200
+
+# API proxy to Cloudflare Worker (optional - if you want to proxy API requests through Pages)
+# /api/* https://api.asadasuerre.com/:splat 200

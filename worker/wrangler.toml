@@ -2,6 +2,58 @@ name = "asada-suerre-api"
 main = "index.ts"
 compatibility_date = "2024-01-01"
 
+# Environment configurations
+# Use: wrangler deploy --env production
+# Use: wrangler deploy --env staging
+# Default (no flag) = local development
+
+# Production environment
+[env.production]
+name = "asada-suerre-api-prod"
+routes = [
+  { pattern = "api.asadasuerre.com/*", zone_name = "asadasuerre.com" }
+]
+
+# Production D1 binding
+[[env.production.d1_databases]]
+binding = "asada_suerre_db"
+database_name = "asada-suerre-db-prod"
+database_id = "PRODUCTION_DATABASE_ID" # Replace with actual ID after creation
+
+# Production R2 binding
+[[env.production.r2_buckets]]
+bucket_name = "asada-suerre-images-prod"
+binding = "asada_suerre_images"
+
+# Production environment variables
+[env.production.vars]
+ENVIRONMENT = "production"
+IMAGE_BASE_URL = "https://cdn.asadasuerre.com"
+
+# Staging environment
+[env.staging]
+name = "asada-suerre-api-staging"
+routes = [
+  { pattern = "api-staging.asadasuerre.com/*", zone_name = "asadasuerre.com" }
+]
+
+# Staging D1 binding
+[[env.staging.d1_databases]]
+binding = "asada_suerre_db"
+database_name = "asada-suerre-db-staging"
+database_id = "STAGING_DATABASE_ID" # Replace with actual ID after creation
+
+# Staging R2 binding
+[[env.staging.r2_buckets]]
+bucket_name = "asada-suerre-images-staging"
+binding = "asada_suerre_images"
+
+# Staging environment variables
+[env.staging.vars]
+ENVIRONMENT = "staging"
+IMAGE_BASE_URL = "https://cdn-staging.asadasuerre.com"
+
+# Local development configuration (default)
 # D1 Database binding
 [[d1_databases]]
 binding = "asada_suerre_db"
@@ -13,11 +65,12 @@ database_id = "2e128980-9cfb-4fe0-9526-c9b6880f2a1d"
 bucket_name = "asada-suerre-images"
 binding = "asada_suerre_images"
 
-# Local development configuration
+# Local development environment variables
 [vars]
 ENVIRONMENT = "local"
 IMAGE_BASE_URL = "http://localhost:8787/images"
 
-# JWT Secret for authentication (CHANGE THIS IN PRODUCTION!)
-# Generate a secure random string: openssl rand -base64 32
-JWT_SECRET = "SECRET_KEY"
+# JWT Secret - DO NOT use this in production!
+# For local development only. Use wrangler secret put for production.
+# JWT_SECRET should be set via: wrangler secret put JWT_SECRET
+# or via .dev.vars file for local development
