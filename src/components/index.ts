@@ -15,6 +15,7 @@ export { default as Loading } from './Loading/Loading';
 export { default as ImageUpload } from './ImageUpload/ImageUpload';
 export { default as FileUpload } from './FileUpload/FileUpload';
 export { default as DynamicItemsInput } from './DynamicItemsInput/DynamicItemsInput';
+export { default as LandscapeWarning } from './LandscapeWarning/LandscapeWarning';
 export { useDialog, DialogProvider } from '../context/DialogContext';
 
 // Section components for routing

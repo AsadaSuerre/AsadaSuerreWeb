@@ -35,7 +35,7 @@ export const es = {
     governance: 'Gobernanza',
     services: 'Gestiones',
     contacts: 'Contactos',
-    about: 'Nosotros',
+    about: 'Nuestra Historia',
   },
 
   // Cards
@@ -141,7 +141,7 @@ export const es = {
     cardNotFound: 'Tarjeta no encontrada',
     slideNotFound: 'Diapositiva de inicio no encontrada',
     timelineNotFound: 'Elemento de línea de tiempo no encontrado',
-    aboutNotFound: 'Contenido de "Nosotros" no encontrado',
+    aboutNotFound: 'Contenido de "Nuestra Historia" no encontrado',
     imageNotFound: 'Imagen no encontrada',
     notFound: 'No encontrado',
     noFileProvided: 'No se proporcionó archivo',
@@ -160,6 +160,12 @@ export const es = {
     phone: 'Teléfono',
     email: 'Correo',
     location: 'Ubicación',
+  },
+
+  // Orientation
+  orientation: {
+    rotateToPortrait: 'Por favor, gira tu dispositivo a modo vertical',
+    rotateToPortraitBestExperience: 'Por favor, gira tu dispositivo a modo vertical para la mejor experiencia',
   },
 };
 

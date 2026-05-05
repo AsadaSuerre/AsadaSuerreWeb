@@ -18,12 +18,6 @@ import { useDialog } from '../../context/DialogContext';
 import { useTranslation } from '../../context/TranslationContext';
 import { LoginDialogContent } from '../LoginDialog';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
-// Import carousel images for mapping
-import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
-import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
-import IMG_3660 from '../../assets/news-images/IMG_3660.JPG';
-import IMG_3661 from '../../assets/news-images/IMG_3661.JPG';
-import IMG_3680 from '../../assets/news-images/IMG_3680.JPG';
 import './AppBar.scss';
 import { KeyboardArrowUp, Menu, CloseRounded } from '@mui/icons-material';
 
@@ -52,6 +46,14 @@ export default function AppBarComponent() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const toggleDrawer = (newOpen: boolean) => () => {
+    if (!isCarouselCollapsed) {
+      handleNavigation("/noticias");
+      return;
+    }
+    setOpen(newOpen);
+  };
+
   const handleLoginClick = () => {
     openDialog({
       title: 'Portal Administrativo',
@@ -67,27 +69,11 @@ export default function AppBarComponent() {
   // Determine if carousel should be collapsed (not on base path)
   const isCarouselCollapsed = location.pathname !== '/' && location.pathname !== '';
 
-  // Image mapping object
-  const imageMap: { [key: string]: string } = {
-    './news-images/IMG_3657.JPG': IMG_3657,
-    './news-images/IMG_3658.JPG': IMG_3658,
-    './news-images/IMG_3660.JPG': IMG_3660,
-    './news-images/IMG_3661.JPG': IMG_3661,
-    './news-images/IMG_3680.JPG': IMG_3680,
-  };
-
   React.useEffect(() => {
     async function loadCarouselImages() {
       try {
         const images = await DataService.getCarouselImages();
-        const transformed = images.map((item: any) => ({
-          id: item.id,
-          image: imageMap[item.image] || item.image,
-          title: item.title,
-          subtitle: item.subtitle,
-          description: item.description
-        }));
-        setCarouselImages(transformed);
+        setCarouselImages(images);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
         alert(errorMessage);
@@ -107,14 +93,7 @@ export default function AppBarComponent() {
     try {
       await DataService.deleteHomeSlide(String(slide.id));
       const updatedImages = await DataService.getCarouselImages();
-      const transformed = updatedImages.map((item: any) => ({
-        id: item.id,
-        image: imageMap[item.image] || item.image,
-        title: item.title,
-        subtitle: item.subtitle,
-        description: item.description
-      }));
-      setCarouselImages(transformed);
+      setCarouselImages(updatedImages);
     } catch (error) {
       alert(t.errors.deleteError + ': ' + (error as Error).message);
     }
@@ -131,14 +110,7 @@ export default function AppBarComponent() {
               const slideId = slide.id;
               await DataService.updateHomeSlide(String(slideId), data);
               const updatedImages = await DataService.getCarouselImages();
-              const transformed = updatedImages.map((item: any) => ({
-                id: item.id,
-                image: imageMap[item.image] || item.image,
-                title: item.title,
-                subtitle: item.subtitle,
-                description: item.description
-              }));
-              setCarouselImages(transformed);
+              setCarouselImages(updatedImages);
               closeDialog();
             } catch (error) {
               throw error;
@@ -164,14 +136,7 @@ export default function AppBarComponent() {
             try {
               await DataService.createHomeSlide(data);
               const updatedImages = await DataService.getCarouselImages();
-              const transformed = updatedImages.map((item: any) => ({
-                id: item.id,
-                image: imageMap[item.image] || item.image,
-                title: item.title,
-                subtitle: item.subtitle,
-                description: item.description
-              }));
-              setCarouselImages(transformed);
+              setCarouselImages(updatedImages);
               closeDialog();
             } catch (error) {
               throw error;
@@ -184,14 +149,6 @@ export default function AppBarComponent() {
       maxWidth: 'md',
       fullWidth: true
     });
-  };
-
-  const toggleDrawer = (newOpen: boolean) => () => {
-    if(!isCarouselCollapsed) {
-      handleNavigation('/noticias');
-      return;
-    }
-    setOpen(newOpen);
   };
 
   const handleNavigation = (path: string) => {

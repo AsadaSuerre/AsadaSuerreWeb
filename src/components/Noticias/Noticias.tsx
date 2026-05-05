@@ -12,17 +12,6 @@ import { useTranslation } from '../../context/TranslationContext';
 import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
-// Import images directly
-import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
-import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
-import IMG_3660 from '../../assets/news-images/IMG_3660.JPG';
-import IMG_3661 from '../../assets/news-images/IMG_3661.JPG';
-import IMG_3680 from '../../assets/news-images/IMG_3680.JPG';
-import IMG_3683 from '../../assets/news-images/IMG_3683.JPG';
-import IMG_3685 from '../../assets/news-images/IMG_3685.JPG';
-import IMG_3689 from '../../assets/news-images/IMG_3689.JPG';
-import IMG_3698 from '../../assets/news-images/IMG_3698.JPG';
-import IMG_3723 from '../../assets/news-images/IMG_3723.JPG';
 import './Noticias.scss';
 
 export default function Noticias() {
@@ -136,20 +125,6 @@ export default function Noticias() {
     });
   };
 
-  // Image mapping object
-  const imageMap: { [key: string]: string } = {
-    './news-images/IMG_3657.JPG': IMG_3657,
-    './news-images/IMG_3658.JPG': IMG_3658,
-    './news-images/IMG_3660.JPG': IMG_3660,
-    './news-images/IMG_3661.JPG': IMG_3661,
-    './news-images/IMG_3680.JPG': IMG_3680,
-    './news-images/IMG_3683.JPG': IMG_3683,
-    './news-images/IMG_3685.JPG': IMG_3685,
-    './news-images/IMG_3689.JPG': IMG_3689,
-    './news-images/IMG_3698.JPG': IMG_3698,
-    './news-images/IMG_3723.JPG': IMG_3723,
-  };
-
   // Filter for news variant and apply category/search filters
   const filteredNews = React.useMemo(() => {
     let filtered = cardsData.filter((item: any) => item.variant === 'news');
@@ -169,18 +144,6 @@ export default function Noticias() {
   if (loading) {
     return <Loading />;
   }
-
-  // Transform news data to GenericCard format
-  const transformedNews: GenericCardData[] = filteredNews.map((news: any) => ({
-    id: news.id,
-    title: news.title,
-    description: news.description,
-    date: news.date,
-    image: imageMap[news.image] || news.image,
-    tag: news.tag,
-    authors: news.authors,
-    variant: news.variant as 'news' | 'default' | 'service' | 'governance' | 'contact'
-  }));
 
   return (
     <Container
@@ -292,7 +255,7 @@ export default function Noticias() {
             />
           </Grid>
         )}
-        {transformedNews.map((news, index) => (
+        {filteredNews.map((news: any, index: number) => (
           <Grid key={news.id} size={{ xs: 12, md: 6 }}>
             <GenericCard
               data={news}
@@ -307,7 +270,7 @@ export default function Noticias() {
             />
           </Grid>
         ))}
-        {transformedNews.length === 0 && !isAuthenticated && (
+        {filteredNews.length === 0 && !isAuthenticated && (
           <Grid size={{ xs: 12 }}>
             <Box
               sx={{
