@@ -1,10 +1,9 @@
 import * as React from 'react';
 import Grid from '@mui/material/Grid';
-import { Box, Container, Button, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import Chip from '@mui/material/Chip';
 import { DataService } from '../../services/dataService';
 import GenericCard from '../GenericCard/GenericCard';
-import { GenericCardData } from '../GenericCard/GenericCard';
 import Search from '../Search/Search';
 import { useAuth } from '../../context/AuthContext';
 import { useDialog } from '../../context/DialogContext';

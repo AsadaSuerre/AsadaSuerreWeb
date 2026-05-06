@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   DialogContent,
   DialogActions,
@@ -25,8 +25,6 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PaymentIcon from '@mui/icons-material/Payment';
-
-import { iconMap } from '../GenericCard/GenericCard';
 
 const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8787';
 
@@ -147,7 +145,6 @@ export default function AddEditDialogContent({ onSave, contentType, initialData,
   const [isSaving, setIsSaving] = React.useState(false);
   const [filesToUpload, setFilesToUpload] = React.useState<Record<string, File>>({});
   const [filesToDelete, setFilesToDelete] = React.useState<string[]>([]);
-  const { isAuthenticated } = useAuth();
   const { user } = useAuth();
   const { t } = useTranslation();
   const { closeDialog } = useDialog();

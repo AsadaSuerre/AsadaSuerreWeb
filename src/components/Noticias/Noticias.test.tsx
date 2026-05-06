@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Noticias from './Noticias';
 
 // Mock GenericCard and AddEditDialogContent since they use import.meta
