@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS cards (
   icon TEXT,
   url TEXT,
   google_maps_url TEXT,
-  variant TEXT NOT NULL
+  variant TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0
 );
 
 -- Unique constraint to prevent duplicate cards

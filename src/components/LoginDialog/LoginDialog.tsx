@@ -5,8 +5,12 @@ import {
   Button,
   Alert,
   CircularProgress,
-  Container
+  Container,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/TranslationContext';
 
@@ -17,6 +21,7 @@ interface LoginDialogProps {
 const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -68,13 +73,36 @@ const LoginDialogContent: React.FC<LoginDialogProps> = ({ onSuccess }) => {
 
         <TextField
           label={t.auth.password}
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           variant="outlined"
           fullWidth
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
           autoComplete="current-password"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                  disabled={isLoading}
+                  aria-label="toggle password visibility"
+                  sx={{ opacity: isLoading ? 0.5 : 1 }}
+                >
+                  {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& input::-ms-reveal': {
+              display: 'none',
+            },
+            '& input::-webkit-credentials-auto-fill-button': {
+              display: 'none',
+            },
+          }}
         />
 
         <Button
