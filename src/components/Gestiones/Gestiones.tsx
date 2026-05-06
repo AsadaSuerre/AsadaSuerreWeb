@@ -36,6 +36,7 @@ export default function Gestiones() {
   }, []);
 
   const handleDelete = async (id: string) => {
+    // eslint-disable-next-line no-restricted-globals
     if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
     
     try {

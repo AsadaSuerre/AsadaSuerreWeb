@@ -361,7 +361,6 @@ const GenericCard: React.FC<GenericCardProps> = ({
                     return allItems.map((req: string, reqIndex: number) => {
                       const text = getItemText(req);
                       const fileUrl = getItemFileUrl(req);
-                      const IMAGE_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_IMAGE_BASE_URL) || 'http://localhost:8787/images';
                       return (
                         <ListItem 
                           key={reqIndex} 
@@ -443,7 +442,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
           </Box>
         );
     }
-  }, [variant, data.tag, data.authors, data.subtitle, data.description, data.items]);
+  }, [variant, data.tag, data.authors, data.subtitle, data.description, data.items, t]);
 
   const handleCardClick = useCallback(() => {
     // If googleMapsUrl exists, do nothing on click

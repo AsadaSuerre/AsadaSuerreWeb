@@ -72,7 +72,7 @@ const DynamicItemsInput: React.FC<DynamicItemsInputProps> = ({
         setInputTypes(prev => ({ ...prev, [index]: 'file' }));
       }
     });
-  }, [value]);
+  }, [value, inputTypes]);
 
   const handleChange = (index: number, newText: string) => {
     const fileUrl = fileUrls[index] || parseFileUrl(value[index]);

@@ -88,6 +88,7 @@ export default function AppBarComponent() {
       return;
     }
     
+    // eslint-disable-next-line no-restricted-globals
     if (!confirm(t.confirm.deleteSlide)) return;
     
     try {

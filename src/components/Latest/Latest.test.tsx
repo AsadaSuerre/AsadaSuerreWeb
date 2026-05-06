@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Latest from './Latest';
 
 describe('Latest', () => {
@@ -9,6 +9,7 @@ describe('Latest', () => {
   test('renders latest component', () => {
     render(<Latest />);
     // The component renders, just check it exists
-    expect(document.querySelector('.MuiGrid-root')).toBeInTheDocument();
+    const grid = document.querySelector('.MuiGrid-root');
+    expect(grid).toBeInTheDocument();
   });
 });
