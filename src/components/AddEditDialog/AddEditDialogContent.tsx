@@ -26,7 +26,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PaymentIcon from '@mui/icons-material/Payment';
 
-const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8787';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8787';
 
 // Icon mapping for dropdown display
 const iconComponentMap: Record<string, React.ElementType> = {

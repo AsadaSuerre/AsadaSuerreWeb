@@ -78,7 +78,7 @@ function extractFileUrls(data: any): string[] {
 
 // Helper function to delete files from R2
 async function deleteFilesFromR2(fileUrls: string[]): Promise<void> {
-  const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:8787';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8787';
   const token = localStorage.getItem('auth_token');
   if (!token) return;
 
@@ -106,7 +106,7 @@ function getFileExtension(fileUrl: string): string {
 
 // Helper function to download file with custom filename
 async function downloadFile(fileUrl: string, filename: string): Promise<void> {
-  const IMAGE_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_IMAGE_BASE_URL) || 'http://localhost:8787/images';
+  const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || 'http://localhost:8787/images';
   const extension = getFileExtension(fileUrl);
   const fullUrl = `${IMAGE_BASE_URL}/${fileUrl}`;
   

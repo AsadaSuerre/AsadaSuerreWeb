@@ -30,7 +30,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [localFile, setLocalFile] = useState<File | null>(null);
-  const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
+  const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || 'http://localhost:8787/images';
 
   React.useEffect(() => {
     if (value && !localFile) {
