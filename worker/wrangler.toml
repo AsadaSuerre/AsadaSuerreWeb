@@ -18,7 +18,7 @@ routes = [
 [[env.production.d1_databases]]
 binding = "asada_suerre_db"
 database_name = "asada-suerre-db-prod"
-database_id = "PRODUCTION_DATABASE_ID" # Replace with actual ID after creation
+database_id = "d0625d80-af80-4532-81fd-4c043f24d98d" # Replace with actual ID after creation
 
 # Production R2 binding
 [[env.production.r2_buckets]]
@@ -41,7 +41,7 @@ routes = [
 [[env.staging.d1_databases]]
 binding = "asada_suerre_db"
 database_name = "asada-suerre-db-staging"
-database_id = "STAGING_DATABASE_ID" # Replace with actual ID after creation
+database_id = "8e4d1285-cb1a-48ec-a80d-f7b8b6290c29" # Replace with actual ID after creation
 
 # Staging R2 binding
 [[env.staging.r2_buckets]]
