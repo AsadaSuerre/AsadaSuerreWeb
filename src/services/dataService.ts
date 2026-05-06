@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
-const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:8787/images';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8787';
+const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || 'http://localhost:8787/images';
 
 // Helper function to construct image URL from key
 export function getImageUrl(key: string | null | undefined): string | null {

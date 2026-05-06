@@ -31,7 +31,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const [localFile, setLocalFile] = useState<File | null>(null);
-  const IMAGE_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_IMAGE_BASE_URL) || 'http://localhost:8787/images';
+  const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || 'http://localhost:8787/images';
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
