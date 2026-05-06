@@ -1,10 +1,15 @@
 import * as React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
-import { Box, BoxProps, Typography } from '@mui/material';
+import { Box, BoxProps, Typography, IconButton } from '@mui/material';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import { memo } from 'react';
+import { getImageUrl } from '../../services/dataService';
 
 export interface CarouselSlideData {
   image: string;
@@ -19,6 +24,11 @@ export interface ImageCarouselProps {
   interval?: number;
   sx?: BoxProps['sx'];
   collapsed?: boolean;
+  showEditControls?: boolean;
+  onEdit?: (index: number, slide: CarouselSlideData) => void;
+  onDelete?: (index: number, slide: CarouselSlideData) => void;
+  onAdd?: () => void;
+  currentPath?: string;
 }
 
 const defaultSx = {
@@ -29,7 +39,12 @@ const collapsedSx = {
   height: '100px',
 };
 
-export default function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed = false }: ImageCarouselProps) {
+const swiperStyle = {
+  width: '100%',
+  height: '80vh',
+};
+
+function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed = false, showEditControls = false, onEdit, onDelete, onAdd, currentPath }: ImageCarouselProps) {
   if (images.length === 0) {
     return (
       <Box sx={{ backgroundColor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center', ...sx }}>
@@ -46,13 +61,15 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 4000
     return item;
   });
 
+  // Only show edit controls when authenticated and on root path
+  const shouldShowEditControls = showEditControls && currentPath === '/';
+
   const baseSx = collapsed ? collapsedSx : defaultSx;
-  const mergedSx = { 
-    ...baseSx, 
-    ...sx, 
+  const mergedSx = {
+    ...baseSx,
+    ...sx,
     width: '100%',
-    transition: 'height 0.8s cubic-bezier(0.4, 0, 0.2, 1), width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-    willChange: 'height',
+    transition: 'height 0.6s ease-in-out',
     overflow: 'hidden', // Prevent content overflow during transition
   };
 
@@ -71,15 +88,48 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 4000
           clickable: true,
           dynamicBullets: true,
         }}
-        style={{
-          width: '100%',
-          height: '80vh',
-        }}
+        style={swiperStyle}
         loop={normalizedSlides.length > 1}
       >
-        {normalizedSlides.map((slide, index) => (
+        {normalizedSlides.map((slide, index) => {
+          return (
           <SwiperSlide key={index}>
             <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+              {/* Edit/Add/Delete Controls */}
+              {shouldShowEditControls && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    display: 'flex',
+                    gap: 1,
+                    zIndex: 10,
+                  }}
+                >
+                  <IconButton
+                    onClick={() => onAdd?.()}
+                    sx={{ backgroundColor: 'success.main', color: 'success.contrastText' }}
+                    aria-label="Agregar slide"
+                  >
+                    <AddIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onEdit?.(index, slide)}
+                    sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+                    aria-label="Editar slide"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onDelete?.(index, slide)}
+                    sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+                    aria-label="Eliminar slide"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              )}
               {/* Fixed image container to prevent resizing */}
               <Box
                 sx={{
@@ -93,8 +143,10 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 4000
               >
                 <Box
                   component="img"
-                  src={slide.image}
-                  alt={`Slide ${index + 1}`}
+                  src={getImageUrl(slide.image) || ''}
+                  alt={slide.title || `Slide ${index + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   sx={{
                     position: 'absolute',
                     top: '50%',
@@ -103,7 +155,6 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 4000
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    willChange: 'transform', // Hardware acceleration
                     backfaceVisibility: 'hidden', // Prevent flickering
                     WebkitBackfaceVisibility: 'hidden',
                   }}
@@ -167,8 +218,11 @@ export default function ImageCarousel({ images, autoPlay = true, interval = 4000
               )}
             </Box>
           </SwiperSlide>
-        ))}
+          );
+        })}
       </Swiper>
     </Box>
   );
 }
+
+export default memo(ImageCarousel);

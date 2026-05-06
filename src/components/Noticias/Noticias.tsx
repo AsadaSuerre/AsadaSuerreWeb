@@ -1,48 +1,49 @@
 import * as React from 'react';
 import Grid from '@mui/material/Grid';
-import { Box, Container } from '@mui/material';
+import { Box, Container, Button, Typography } from '@mui/material';
 import Chip from '@mui/material/Chip';
-import newsData from '../../assets/news-data.json';
+import { DataService } from '../../services/dataService';
 import GenericCard from '../GenericCard/GenericCard';
 import { GenericCardData } from '../GenericCard/GenericCard';
 import Search from '../Search/Search';
-// Import images directly
-import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
-import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
-import IMG_3660 from '../../assets/news-images/IMG_3660.JPG';
-import IMG_3661 from '../../assets/news-images/IMG_3661.JPG';
-import IMG_3680 from '../../assets/news-images/IMG_3680.JPG';
-import IMG_3683 from '../../assets/news-images/IMG_3683.JPG';
-import IMG_3685 from '../../assets/news-images/IMG_3685.JPG';
-import IMG_3689 from '../../assets/news-images/IMG_3689.JPG';
-import IMG_3698 from '../../assets/news-images/IMG_3698.JPG';
-import IMG_3723 from '../../assets/news-images/IMG_3723.JPG';
+import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
+import Loading from '../Loading/Loading';
+import AddIcon from '@mui/icons-material/Add';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import './Noticias.scss';
 
 export default function Noticias() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('Todo');
   const [focusedCardIndex, setFocusedCardIndex] = React.useState<number | null>(null);
+  const [cardsData, setCardsData] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
+  const { openDialog, closeDialog } = useDialog();
 
-  const categories = React.useMemo(() => {
-    const uniqueTags = Array.from(new Set(newsData.map(item => item.tag)));
-    return ['Todo', ...uniqueTags];
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await DataService.getCardsData();
+        setCardsData(data);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
-  const filteredNews = React.useMemo(() => {
-    let filtered = newsData;
-    if (selectedCategory !== 'Todo') {
-      filtered = filtered.filter(item => item.tag === selectedCategory);
-    }
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(item => 
-        item.title.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query)
-      );
-    }
-    return filtered;
-  }, [selectedCategory, searchQuery]);
+  const categories = React.useMemo(() => {
+    const newsItems = cardsData.filter((item: any) => item.variant === 'news');
+    const uniqueTags = Array.from(new Set(newsItems.map((item: any) => item.tag).filter(Boolean)));
+    return ['Todo', ...uniqueTags];
+  }, [cardsData]);
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
@@ -60,29 +61,89 @@ export default function Noticias() {
     setFocusedCardIndex(null);
   };
 
-  // Image mapping object
-  const imageMap: { [key: string]: string } = {
-    './news-images/IMG_3657.JPG': IMG_3657,
-    './news-images/IMG_3658.JPG': IMG_3658,
-    './news-images/IMG_3660.JPG': IMG_3660,
-    './news-images/IMG_3661.JPG': IMG_3661,
-    './news-images/IMG_3680.JPG': IMG_3680,
-    './news-images/IMG_3683.JPG': IMG_3683,
-    './news-images/IMG_3685.JPG': IMG_3685,
-    './news-images/IMG_3689.JPG': IMG_3689,
-    './news-images/IMG_3698.JPG': IMG_3698,
-    './news-images/IMG_3723.JPG': IMG_3723,
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta noticia?')) return;
+    
+    try {
+      await DataService.deleteCard(id);
+      const updatedData = await DataService.getCardsData();
+      setCardsData(updatedData);
+    } catch (error) {
+      alert('Error al eliminar: ' + (error as Error).message);
+    }
   };
 
-  // Transform news data to GenericCard format
-  const transformedNews: GenericCardData[] = filteredNews.map((news, index) => ({
-    id: index.toString(),
-    title: news.title,
-    description: news.description,
-    image: imageMap[news.img] || news.img, // Use mapped image or fallback to original
-    tag: news.tag,
-    authors: news.authors
-  }));
+  const handleEdit = (news: any) => {
+    openDialog({
+      title: 'Editar Noticia',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const newsId = news.id;
+              await DataService.updateCard(String(newsId), data);
+              const updatedData = await DataService.getCardsData();
+              setCardsData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="news"
+          initialData={news}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleAdd = () => {
+    openDialog({
+      title: 'Agregar Noticia',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createCard({ ...data, variant: 'news' });
+              const updatedData = await DataService.getCardsData();
+              setCardsData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="news"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  // Filter for news variant and apply category/search filters
+  const filteredNews = React.useMemo(() => {
+    let filtered = cardsData.filter((item: any) => item.variant === 'news');
+    if (selectedCategory !== 'Todo') {
+      filtered = filtered.filter((item: any) => item.tag === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((item: any) => 
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+      );
+    }
+    return filtered;
+  }, [cardsData, selectedCategory, searchQuery]);
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <Container
@@ -164,19 +225,65 @@ export default function Noticias() {
         </Box>
       </Box>
       <Grid container spacing={2} columns={12}>
-        {transformedNews.map((news, index) => (
+        {isAuthenticated && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <GenericCard
+              data={{
+                id: 'add',
+                title: '',
+                variant: 'news',
+              }}
+              size="large"
+              onClick={handleAdd}
+              customContent={
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 4,
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                    Agregar Noticia
+                  </Typography>
+                </Box>
+              }
+              hideImage
+            />
+          </Grid>
+        )}
+        {filteredNews.map((news: any, index: number) => (
           <Grid key={news.id} size={{ xs: 12, md: 6 }}>
             <GenericCard
               data={news}
-              variant="news"
               focused={focusedCardIndex === index}
               onFocus={handleFocus}
               onBlur={handleBlur}
               tabIndex={0}
               size="large"
+              showEditControls={isAuthenticated}
+              onEdit={() => handleEdit(news)}
+              onDelete={() => handleDelete(String(news.id))}
             />
           </Grid>
         ))}
+        {filteredNews.length === 0 && !isAuthenticated && (
+          <Grid size={{ xs: 12 }}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 8,
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                {t.empty.noNews}
+              </Typography>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Container>
   );

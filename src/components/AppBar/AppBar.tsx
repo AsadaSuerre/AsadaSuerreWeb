@@ -12,12 +12,12 @@ import Drawer from '@mui/material/Drawer';
 import { ReactComponent as LogoAsada } from '../../assets/asada-suerre-logo.svg';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
-// Import carousel images
-import IMG_3657 from '../../assets/news-images/IMG_3657.JPG';
-import IMG_3658 from '../../assets/news-images/IMG_3658.JPG';
-import IMG_3660 from '../../assets/news-images/IMG_3660.JPG';
-import IMG_3661 from '../../assets/news-images/IMG_3661.JPG';
-import IMG_3680 from '../../assets/news-images/IMG_3680.JPG';
+import { DataService } from '../../services/dataService';
+import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
+import { LoginDialogContent } from '../LoginDialog';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import './AppBar.scss';
 import { KeyboardArrowUp, Menu, CloseRounded } from '@mui/icons-material';
 
@@ -39,52 +39,116 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 export default function AppBarComponent() {
   const [open, setOpen] = React.useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
+  const { openDialog, closeDialog } = useDialog();
+  const { t } = useTranslation();
+  const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const toggleDrawer = (newOpen: boolean) => () => {
+    if (!isCarouselCollapsed) {
+      handleNavigation("/noticias");
+      return;
+    }
+    setOpen(newOpen);
+  };
+
+  const handleLoginClick = () => {
+    openDialog({
+      title: 'Portal Administrativo',
+      content: <LoginDialogContent onSuccess={closeDialog} />,
+      maxWidth: 'sm',
+    });
+  };
+
+  const handleLogoutClick = () => {
+    logout();
+  };
 
   // Determine if carousel should be collapsed (not on base path)
   const isCarouselCollapsed = location.pathname !== '/' && location.pathname !== '';
 
-  // Carousel images with text overlays
-  const carouselImages = [
-    {
-      image: IMG_3657,
-      title: "Servicio de Agua Potable",
-      subtitle: "Calidad garantizada para todos",
-      description: "Brindamos agua segura y confiable para toda la comunidad de Suerre"
-    },
-    {
-      image: IMG_3658,
-      title: "Mantenimiento Preventivo",
-      subtitle: "Cuidamos nuestra infraestructura",
-      description: "Trabajos continuos para mejorar y mantener el sistema de distribución"
-    },
-    {
-      image: IMG_3660,
-      title: "Calidad del Agua",
-      subtitle: "Análisis rigurosos diarios",
-      description: "Monitoreo constante para asegurar los más altos estándares de potabilidad"
-    },
-    {
-      image: IMG_3661,
-      title: "Comunidad Unida",
-      subtitle: "Trabajando juntos por el futuro",
-      description: "Participación activa de los vecinos en el cuidado del recurso hídrico"
-    },
-    {
-      image: IMG_3680,
-      title: "Innovación y Tecnología",
-      subtitle: "Modernizando nuestros sistemas",
-      description: "Implementando soluciones tecnológicas para un servicio más eficiente"
+  React.useEffect(() => {
+    async function loadCarouselImages() {
+      try {
+        const images = await DataService.getCarouselImages();
+        setCarouselImages(images);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
+      }
     }
-  ];
+    loadCarouselImages();
+  }, []);
 
-  const toggleDrawer = (newOpen: boolean) => () => {
-    if(!isCarouselCollapsed) {
-      handleNavigation('/noticias');
+  const handleDeleteSlide = async (index: number, slide: any) => {
+    if (carouselImages.length === 1) {
+      alert(t.errors.mustHaveOneSlide);
       return;
     }
-    setOpen(newOpen);
+    
+    if (!confirm(t.confirm.deleteSlide)) return;
+    
+    try {
+      await DataService.deleteHomeSlide(String(slide.id));
+      const updatedImages = await DataService.getCarouselImages();
+      setCarouselImages(updatedImages);
+    } catch (error) {
+      alert(t.errors.deleteError + ': ' + (error as Error).message);
+    }
+  };
+
+  const handleEditSlide = (index: number, slide: any) => {
+    openDialog({
+      title: t.actions.editSlide,
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const slideId = slide.id;
+              await DataService.updateHomeSlide(String(slideId), data);
+              const updatedImages = await DataService.getCarouselImages();
+              setCarouselImages(updatedImages);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="carousel"
+          initialData={slide}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleAddSlide = () => {
+    openDialog({
+      title: t.actions.addSlide,
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createHomeSlide(data);
+              const updatedImages = await DataService.getCarouselImages();
+              setCarouselImages(updatedImages);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="carousel"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
   };
 
   const handleNavigation = (path: string) => {
@@ -117,6 +181,7 @@ export default function AppBarComponent() {
         mt: "calc(var(--template-frame-height, 0px))",
         zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
+      role="banner"
     >
       {/* Hero Section with Background Image */}
       <ImageCarousel 
@@ -124,6 +189,11 @@ export default function AppBarComponent() {
         autoPlay={true} 
         interval={4000} 
         collapsed={isCarouselCollapsed}
+        showEditControls={isAuthenticated}
+        currentPath={location.pathname}
+        onEdit={handleEditSlide}
+        onDelete={handleDeleteSlide}
+        onAdd={handleAddSlide}
         sx={{ 
           position: 'relative',
           zIndex: 0,
@@ -163,7 +233,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Inicio
+                {t.nav.home}
               </Button>
               <Button
                 variant="text"
@@ -179,7 +249,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Noticias
+                {t.nav.news}
               </Button>
               <Button
                 variant="text"
@@ -195,7 +265,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Gestiones
+                {t.nav.services}
               </Button>
               <Button
                 variant="text"
@@ -211,7 +281,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Gobernanza
+                {t.nav.governance}
               </Button>
               <Button
                 variant="text"
@@ -227,7 +297,7 @@ export default function AppBarComponent() {
                     : "inherit",
                 }}
               >
-                Nuestra historia
+                {t.nav.about}
               </Button>
             </Box>
           </Box>
@@ -252,10 +322,15 @@ export default function AppBarComponent() {
                   : "inherit",
               }}
             >
-              Contactos
+              {t.nav.contacts}
             </Button>
-            <Button color="primary" variant="contained" size="small">
-              Portal Administrativo
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
+            >
+              {isAuthenticated ? `${t.auth.logout} (${user?.username})` : 'Portal Administrativo'}
             </Button>
           </Box>
           <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1 }}>
@@ -296,27 +371,32 @@ export default function AppBarComponent() {
             >
               <Box sx={{ p: 2, backgroundColor: "background.default" }}>
                 <MenuItem onClick={() => handleNavigation("/")}>
-                  Inicio
+                  {t.nav.home}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/noticias")}>
-                  Noticias
+                  {t.nav.news}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/gestiones")}>
-                  Gestiones
+                  {t.nav.services}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/gobernanza")}>
-                  Gobernanza{" "}
+                  {t.nav.governance}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/nuestra-historia")}>
-                  Nuestra historia
+                  {t.nav.about}
                 </MenuItem>
                 <MenuItem onClick={() => handleNavigation("/contactos")}>
-                  Contactos
+                  {t.nav.contacts}
                 </MenuItem>
                 <Divider sx={{ my: 3 }} />
                 <MenuItem>
-                  <Button color="secondary" variant="contained" fullWidth>
-                    Portal Administrativo
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    fullWidth
+                    onClick={isAuthenticated ? handleLogoutClick : handleLoginClick}
+                  >
+                    {isAuthenticated ? `${t.auth.logout} (${user?.username})` : 'Portal Administrativo'}
                   </Button>
                 </MenuItem>
               </Box>

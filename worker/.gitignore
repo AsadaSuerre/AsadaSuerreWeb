@@ -1,0 +1,12 @@
+# Node modules
+node_modules/
+
+# Package lock
+package-lock.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Wrangler
+.wrangler/
+.dev.vars

@@ -2,17 +2,21 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import AppTheme from './shared-theme/AppTheme';
-import { 
-  AppBar, 
-  Noticias, 
-  Gestiones, 
-  Gobernanza, 
-  NuestraHistoria, 
+import {
+  AppBar,
+  Noticias,
+  Gestiones,
+  Gobernanza,
+  NuestraHistoria,
   Contactos,
-  Footer, 
+  Footer,
   ContactsContainer,
-  ScrollToTop
+  ScrollToTop,
+  LandscapeWarning
 } from './components';
+import GlobalDialog from './components/FullScreenDialog/GlobalDialog';
+import { AuthProvider } from './context/AuthContext';
+import { TranslationProvider } from './context/TranslationContext';
 import './App.css';
 
 function AppContent() {
@@ -20,6 +24,7 @@ function AppContent() {
     <AppTheme>
       <CssBaseline enableColorScheme />
       <Router>
+        <LandscapeWarning />
         <ScrollToTop />
         <AppBar />
         <Box sx={{ minHeight: "calc(100vh - 250px)", my: { xs: 18, md: 20 }, }}>
@@ -40,5 +45,13 @@ function AppContent() {
 }
 
 export default function App() {
-  return <AppContent />;
+  return (
+    <TranslationProvider>
+      <AuthProvider>
+        <GlobalDialog>
+          <AppContent />
+        </GlobalDialog>
+      </AuthProvider>
+    </TranslationProvider>
+  );
 }

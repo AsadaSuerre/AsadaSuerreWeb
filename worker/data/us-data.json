@@ -1,0 +1,16 @@
+{
+  "statsData": [
+    { "number": "2,500+", "label": "Usuarios Conectados" },
+    { "number": "29", "label": "Años de Servicio" },
+    { "number": "15", "label": "Kilómetros de Red" },
+    { "number": "99.5%", "label": "Calidad del Agua" }
+  ],
+  "mission": {
+    "title": "Misión",
+    "content": "Proporcionar agua potable de calidad a todos los habitantes de la comunidad de Suerre, garantizando un servicio eficiente, sostenible y a precios accesibles, contribuyendo al mejoramiento de la calidad de vida de nuestros usuarios."
+  },
+  "vision": {
+    "title": "Visión",
+    "content": "Ser una ASADA modelo en la gestión sostenible del recurso hídrico, reconocida por su excelencia en el servicio, su compromiso con el medio ambiente y su contribución al desarrollo comunitario."
+  }
+}

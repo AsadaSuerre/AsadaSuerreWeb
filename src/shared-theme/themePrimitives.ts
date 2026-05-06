@@ -106,13 +106,13 @@ export const getDesignTokens = (mode: PaletteMode) => {
       mode,
       primary: {
         light: brand[200],
-        main: brand[400],
+        main: brand[500],
         dark: brand[700],
         contrastText: brand[50],
         ...(mode === 'dark' && {
           contrastText: brand[50],
           light: brand[300],
-          main: brand[400],
+          main: brand[500],
           dark: brand[700],
         }),
       },
@@ -243,7 +243,7 @@ export const colorSchemes = {
     palette: {
       primary: {
         light: brand[200],
-        main: brand[400],
+        main: brand[500],
         dark: brand[700],
         contrastText: brand[50],
       },
@@ -294,7 +294,7 @@ export const colorSchemes = {
       primary: {
         contrastText: brand[50],
         light: brand[300],
-        main: brand[400],
+        main: brand[500],
         dark: brand[700],
       },
       info: {

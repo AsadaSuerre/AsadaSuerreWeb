@@ -13,7 +13,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.126",
+    "@types/node": "^22.10.7",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
@@ -25,16 +25,27 @@
     "react-wavify": "^1.11.1",
     "sass": "^1.98.0",
     "swiper": "^12.1.3",
-    "typescript": "^4.9.5",
+    "typescript": "^5.8.3",
     "web-vitals": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=24.15.0"
   },
   "scripts": {
     "start": "set NODE_OPTIONS=--max-old-space-size=8192 && react-scripts start",
     "build": "set NODE_OPTIONS=--max-old-space-size=8192 && react-scripts build",
+    "build:production": "set NODE_OPTIONS=--max-old-space-size=8192 && set REACT_APP_API_URL=https://api.acueductosuerre.com && set REACT_APP_IMAGE_BASE_URL=https://cdn.acueductosuerre.com && react-scripts build",
+    "build:staging": "set NODE_OPTIONS=--max-old-space-size=8192 && set REACT_APP_API_URL=https://api-staging.acueductosuerre.com && set REACT_APP_IMAGE_BASE_URL=https://cdn-staging.acueductosuerre.com && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "worker:dev": "cd worker && npm run dev",
+    "worker:deploy": "cd worker && npm run deploy",
+    "worker:deploy:staging": "cd worker && wrangler deploy --env staging",
+    "worker:deploy:production": "cd worker && wrangler deploy --env production",
+    "worker:tail": "cd worker && npm run tail",
+    "db:migrate": "cd worker && npm run migrate",
+    "db:migrate:production": "cd worker && wrangler d1 execute DB_ID --remote --file=schema.sql --env production",
+    "db:migrate:staging": "cd worker && wrangler d1 execute DB_ID --remote --file=schema.sql --env staging"
   },
   "eslintConfig": {
     "extends": [

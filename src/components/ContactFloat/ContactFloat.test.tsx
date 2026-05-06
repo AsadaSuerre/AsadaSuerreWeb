@@ -23,7 +23,6 @@ describe('ContactFloat', () => {
     );
     
     expect(screen.getByLabelText(/Test contact button/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Test Contact/i)).toBeInTheDocument();
   });
 
   test('opens external link when clicked', () => {

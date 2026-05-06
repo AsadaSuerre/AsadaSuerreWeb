@@ -1,84 +1,107 @@
 import * as React from 'react';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PaymentIcon from '@mui/icons-material/Payment';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import Box from '@mui/material/Box';
+import { Typography } from '@mui/material';
 import GenericCard from '../GenericCard/GenericCard';
-import { GenericCardData } from '../GenericCard/GenericCard';
+import { DataService } from '../../services/dataService';
+import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from '../../context/TranslationContext';
+import Loading from '../Loading/Loading';
+import AddIcon from '@mui/icons-material/Add';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import './Gestiones.scss';
 
-const gestionesData = [
-  {
-    title: 'Consulta de Recibos',
-    description: 'Consulta tus recibos de pago y estado de cuenta.',
-    icon: <AssignmentIcon />,
-    requirements: [
-      'Número de abonado',
-      'Número de teléfono'
-    ],
-    buttonText: 'Consultar Recibos'
-  },
-  {
-    title: 'Pago de Servicios',
-    description: 'Realiza el pago de tu recibo de agua de forma rápida y segura.',
-    icon: <PaymentIcon />,
-    requirements: [
-      'Número de contrato',
-      'Monto a pagar',
-      'Método de pago preferido'
-    ],
-    buttonText: 'Pagar en Línea'
-  },
-  {
-    title: 'Solicitud de Nuevo Servicio',
-    description: 'Solicita una nueva conexión de agua potable para tu domicilio o negocio.',
-    icon: <WaterDropIcon />,
-    requirements: [
-      'Copia de cédula de identidad',
-      'Prueba de propiedad o contrato de arrendamiento',
-      'Croquis de ubicación del predio'
-    ],
-    buttonText: 'Solicitar Servicio'
-  },
-  {
-    title: 'Solicitud de Facturas',
-    description: 'Obtén copias de tus facturas anteriores o solicita facturas a domicilio.',
-    icon: <ReceiptIcon />,
-    requirements: [
-      'Número de contrato',
-      'Período solicitado',
-      'Dirección de envío (si aplica)'
-    ],
-    buttonText: 'Solicitar Facturas'
-  }
-];
-
 export default function Gestiones() {
-  // Transform gestiones data to GenericCard format
-  const transformedGestiones: GenericCardData[] = gestionesData.map((gestion, index) => ({
-    id: index.toString(),
-    title: gestion.title,
-    description: gestion.description,
-    metadata: {
-      icon: gestion.icon,
-      requirements: gestion.requirements
-    },
-    actions: [
-      {
-        label: gestion.buttonText,
-        onClick: () => {
-          if (gestion.title === 'Consulta de Recibos') {
-            window.open('https://www.cisaweb.com/mclientes', '_blank');
-          } else {
-            console.log(`${gestion.buttonText} clicked`);
-          }
-        },
-        variant: 'contained'
+  const [gestionesData, setGestionesData] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const { isAuthenticated } = useAuth();
+  const { openDialog, closeDialog } = useDialog();
+  const { t } = useTranslation();
+
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await DataService.getServiceData();
+        setGestionesData(data);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
+      } finally {
+        setLoading(false);
       }
-    ]
-  }));
+    }
+    loadData();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+    
+    try {
+      await DataService.deleteCard(id);
+      const updatedData = await DataService.getServiceData();
+      setGestionesData(updatedData);
+    } catch (error) {
+      alert('Error al eliminar: ' + (error as Error).message);
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    openDialog({
+      title: 'Editar Gestión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const itemId = item.id;
+              await DataService.updateCard(String(itemId), data);
+              const updatedData = await DataService.getServiceData();
+              setGestionesData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="service"
+          initialData={item}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleAdd = () => {
+    openDialog({
+      title: 'Agregar Gestión',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createCard({ ...data, variant: 'service' });
+              const updatedData = await DataService.getServiceData();
+              setGestionesData(updatedData);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="service"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <Container
@@ -91,14 +114,58 @@ export default function Gestiones() {
       }}
     >
       <Grid container spacing={4}>
-        {transformedGestiones.map((gestion) => (
-          <Grid key={gestion.id} size={{ xs: 12, md: 6 }}>
+        {isAuthenticated && (
+          <Grid size={{ xs: 12, md: 3 }}>
+            <GenericCard
+              data={{
+                id: 'add',
+                title: '',
+                variant: 'service',
+              }}
+              onClick={handleAdd}
+              customContent={
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 4,
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                    Agregar Gestión
+                  </Typography>
+                </Box>
+              }
+            />
+          </Grid>
+        )}
+        {gestionesData.map((gestion: any, index: number) => (
+          <Grid key={index} size={{ xs: 12, md: 3 }}>
             <GenericCard
               data={gestion}
-              variant="service"
+              showEditControls={isAuthenticated}
+              onEdit={() => handleEdit(gestion)}
+              onDelete={() => handleDelete(String(gestion.id))}
             />
           </Grid>
         ))}
+        {gestionesData.length === 0 && !isAuthenticated && (
+          <Grid size={{ xs: 12 }}>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 8,
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                {t.empty.noServices}
+              </Typography>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Container>
   );

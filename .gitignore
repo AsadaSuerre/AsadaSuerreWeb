@@ -21,3 +21,20 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Wrangler
+.wrangler/
+*.local
+wrangler.toml.local
+
+# Worker
+worker/node_modules
+worker/.wrangler
+worker/dist
+worker/*.log
+
+# DB migration
+db/node_modules
+db/*.db
+db/*.sqlite
+db/*.sqlite3

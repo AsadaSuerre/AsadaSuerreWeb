@@ -1,11 +1,5 @@
 import React from 'react';
 import GenericCard, { GenericCardData } from './GenericCard';
-import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PaymentIcon from '@mui/icons-material/Payment';
 
 // Example usage data for different variants
 
@@ -19,7 +13,8 @@ export const newsCardExample: GenericCardData = {
   authors: [
     { name: 'Juan Pérez', avatar: '/path/to/avatar1.jpg' },
     { name: 'María González', avatar: '/path/to/avatar2.jpg' }
-  ]
+  ],
+  variant: 'news'
 };
 
 // Service card example (like Gestiones)
@@ -27,16 +22,13 @@ export const serviceCardExample: GenericCardData = {
   id: '2',
   title: 'Solicitud de Nuevo Servicio',
   description: 'Solicita una nueva conexión de agua potable para tu domicilio o negocio.',
-  metadata: {
-    icon: <WaterDropIcon />
-  },
-  actions: [
-    {
-      label: 'Solicitar Servicio',
-      onClick: () => console.log('Solicitando servicio...'),
-      variant: 'contained'
-    }
-  ]
+  icon: 'WaterDrop',
+  items: [
+    'Copia de cédula de identidad',
+    'Prueba de propiedad o contrato de arrendamiento',
+    'Croquis de ubicación del predio'
+  ],
+  variant: 'service'
 };
 
 // Governance card example (like Gobernanza)
@@ -44,34 +36,23 @@ export const governanceCardExample: GenericCardData = {
   id: '3',
   title: 'Transparencia',
   description: 'Accede a toda la información sobre nuestra gestión financiera y administrativa.',
-  metadata: {
-    icon: <AssignmentIcon />
-  },
-  actions: [
-    {
-      label: 'Ver Informes',
-      onClick: () => console.log('Ver informes...'),
-      variant: 'outlined'
-    }
-  ]
+  icon: 'Assignment',
+  items: [
+    'Balance Anual',
+    'Informe de Auditoría',
+    'Presupuesto Anual',
+    'Estado de Cuentas'
+  ],
+  variant: 'governance'
 };
 
 // Contact card example (like Contactos)
 export const contactCardExample: GenericCardData = {
   id: '4',
-  title: 'Teléfono',
-  subtitle: '2763 6703',
+  title: '2763 6703',
   description: 'Llámanos para cualquier consulta o emergencia.',
-  metadata: {
-    icon: <PhoneIcon />
-  },
-  actions: [
-    {
-      label: 'Llamar Ahora',
-      onClick: () => window.open('tel:+50627636703', '_self'),
-      variant: 'contained'
-    }
-  ]
+  icon: 'Phone',
+  variant: 'contact'
 };
 
 // Example component showing all variants
@@ -94,7 +75,6 @@ export const GenericCardExamples: React.FC = () => {
         <h3>News Variant</h3>
         <GenericCard
           data={newsCardExample}
-          variant="news"
           focused={focusedCard === 1}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -106,7 +86,6 @@ export const GenericCardExamples: React.FC = () => {
         <h3>Service Variant</h3>
         <GenericCard
           data={serviceCardExample}
-          variant="service"
           focused={focusedCard === 2}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -118,7 +97,6 @@ export const GenericCardExamples: React.FC = () => {
         <h3>Governance Variant</h3>
         <GenericCard
           data={governanceCardExample}
-          variant="governance"
           focused={focusedCard === 3}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -130,7 +108,6 @@ export const GenericCardExamples: React.FC = () => {
         <h3>Contact Variant</h3>
         <GenericCard
           data={contactCardExample}
-          variant="contact"
           focused={focusedCard === 4}
           onFocus={handleFocus}
           onBlur={handleBlur}

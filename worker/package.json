@@ -1,0 +1,20 @@
+{
+  "name": "asada-suerre-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for ASADA Suerre",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "migrate": "tsx migrate.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.22.0"
+  }
+}

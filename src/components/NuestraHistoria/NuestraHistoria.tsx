@@ -13,55 +13,317 @@ import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import { DataService } from '../../services/dataService';
+import { getImageUrl } from '../../services/dataService';
+import { iconMap } from '../GenericCard/GenericCard';
+import { useAuth } from '../../context/AuthContext';
+import { useDialog } from '../../context/DialogContext';
+import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
+import Loading from '../Loading/Loading';
 import './NuestraHistoria.scss';
 
-const timelineData = [
-  {
-    year: '1995',
-    title: 'Fundación',
-    description: 'La ASADA Suerre fue fundada por un grupo de vecinos comprometidos con llevar agua potable a la comunidad.',
-    icon: WaterDropIcon
-  },
-  {
-    year: '1998',
-    title: 'Primera Conexión',
-    description: 'Se realizan las primeras 50 conexiones domiciliares, marcando el inicio del servicio formal.',
-    icon: WaterDropIcon
-  },
-  {
-    year: '2005',
-    title: 'Expansión',
-    description: 'Se amplía la red de distribución para cubrir 200 hogares adicionales en zonas aledañas.',
-    icon: WaterDropIcon
-  },
-  {
-    year: '2012',
-    title: 'Modernización',
-    description: 'Se implementan nuevos sistemas de tratamiento y purificación del agua.',
-    icon: WaterDropIcon
-  },
-  {
-    year: '2020',
-    title: 'Digitalización',
-    description: 'Se lanza el sistema de facturación en línea y portal web para mejorar el servicio.',
-    icon: WaterDropIcon
-  },
-  {
-    year: '2024',
-    title: 'Sostenibilidad',
-    description: 'Se implementan proyectos de energía solar y protección de fuentes de agua.',
-    icon: WaterDropIcon
-  }
-];
+// Hook for number animation
+const useNumberAnimation = (end: string | number, duration: number = 1000) => {
+  const [count, setCount] = React.useState(0);
 
-const statsData = [
-  { number: '2,500+', label: 'Usuarios Conectados' },
-  { number: '29', label: 'Años de Servicio' },
-  { number: '15', label: 'Kilómetros de Red' },
-  { number: '99.5%', label: 'Calidad del Agua' }
-];
+  // Extract numeric value from string like "2,500+" or "99.5%"
+  const parseEndValue = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    const parsed = parseFloat(value.replace(/[^0-9.]/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Format the number back to the original format
+  const formatNumber = (value: number, original: string | number): string => {
+    if (typeof original === 'number') return value.toString();
+    const hasPercent = original.toString().includes('%');
+    const hasPlus = original.toString().includes('+');
+    
+    let formatted = value.toLocaleString('en-US', { maximumFractionDigits: 1 });
+    if (hasPercent) formatted += '%';
+    if (hasPlus) formatted += '+';
+    return formatted;
+  };
+
+  const endValue = parseEndValue(end);
+
+  React.useEffect(() => {
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      
+      // Easing function for smoother animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentCount = endValue * easeOutQuart;
+      
+      setCount(currentCount);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [endValue, duration]);
+
+  return formatNumber(count, end);
+};
+
+// StatCard component to properly use the hook
+function StatCard({ number, label, onEdit }: { number: string | number; label: string; onEdit?: () => void }) {
+  const animatedNumber = useNumberAnimation(number);
+  const { isAuthenticated } = useAuth();
+  return (
+    <Card className="stat-card" sx={{ textAlign: "center", py: 3, position: 'relative' }}>
+      {isAuthenticated && onEdit && (
+        <IconButton
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          onClick={onEdit}
+          color="primary"
+        >
+          <EditIcon />
+        </IconButton>
+      )}
+      <CardContent>
+        <Typography
+          variant="h3"
+          component="div"
+          className="stat-number"
+          sx={{ fontWeight: "bold", color: "primary.main" }}
+        >
+          {animatedNumber}
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          className="stat-label"
+        >
+          {label}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function NuestraHistoria() {
+  const [timelineData, setTimelineData] = React.useState<any[]>([]);
+  const [statsData, setStatsData] = React.useState<any[]>([]);
+  const [mission, setMission] = React.useState<{ title: string; content: string } | null>(null);
+  const [vision, setVision] = React.useState<{ title: string; content: string } | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const { isAuthenticated } = useAuth();
+  const { openDialog, closeDialog } = useDialog();
+
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const [timeline, stats, missionData, visionData] = await Promise.all([
+          DataService.getTimeItemsData(),
+          DataService.getStatsData(),
+          DataService.getMission(),
+          DataService.getVision()
+        ]);
+        setTimelineData(timeline || []);
+        setStatsData(stats || []);
+        setMission(missionData || null);
+        setVision(visionData || null);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos';
+        alert(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleDeleteTimelineItem = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este hito?')) return;
+    
+    try {
+      await DataService.deleteTimelineItem(id);
+      const updatedTimeline = await DataService.getTimeItemsData();
+      setTimelineData(updatedTimeline);
+    } catch (error) {
+      alert('Error al eliminar: ' + (error as Error).message);
+    }
+  };
+
+  const handleEditTimelineItem = (item: any) => {
+    openDialog({
+      title: 'Editar Evento del Historial',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateTimelineItem(String(item.id), data);
+              const updatedTimeline = await DataService.getTimeItemsData();
+              setTimelineData(updatedTimeline);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="timeline"
+          initialData={item}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleAddTimelineItem = () => {
+    openDialog({
+      title: 'Agregar Evento del Historial',
+      icon: 'Add',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.createTimelineItem(data);
+              const updatedTimeline = await DataService.getTimeItemsData();
+              setTimelineData(updatedTimeline);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="timeline"
+          mode="add"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleEditStats = (stat: any, index: number) => {
+    openDialog({
+      title: 'Editar Estadística',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              const updatedStats = [...statsData];
+              updatedStats[index] = data;
+              await DataService.updateStats(updatedStats);
+              const newStats = await DataService.getStatsData();
+              setStatsData(newStats || []);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="stats"
+          initialData={stat}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'sm',
+      fullWidth: true
+    });
+  };
+
+  const handleEditMission = () => {
+    if (!mission) return;
+    openDialog({
+      title: 'Editar Misión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateAboutContent('mission', data);
+              const updatedMission = await DataService.getMission();
+              setMission(updatedMission || null);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="mission"
+          initialData={mission}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleEditVision = () => {
+    if (!vision) return;
+    openDialog({
+      title: 'Editar Visión',
+      icon: 'Edit',
+      content: (
+        <AddEditDialogContent
+          onSave={async (data) => {
+            try {
+              await DataService.updateAboutContent('vision', data);
+              const updatedVision = await DataService.getVision();
+              setVision(updatedVision || null);
+              closeDialog();
+            } catch (error) {
+              throw error;
+            }
+          }}
+          contentType="vision"
+          initialData={vision}
+          mode="edit"
+        />
+      ),
+      maxWidth: 'md',
+      fullWidth: true
+    });
+  };
+
+  const handleTimelineItemClick = (item: any) => {
+    openDialog({
+      title: item.title,
+      image: item.image,
+      icon: item.icon,
+      content: (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {item.year && (
+            <Typography variant="h6" color="text.secondary">
+              {item.year}
+            </Typography>
+          )}
+          {item.description && (
+            <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+              {item.description}
+            </Typography>
+          )}
+        </Box>
+      ),
+      maxWidth: 'lg',
+      fullWidth: true
+    });
+  };
+
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
     <Container
       maxWidth="lg"
@@ -73,71 +335,129 @@ export default function NuestraHistoria() {
       }}
     >
       {/* Statistics Section */}
-      <Grid container spacing={3} sx={{ mb: 6 }}>
-        {statsData.map((stat, index) => (
-          <Grid key={index} size={{ xs: 6, md: 3 }}>
-            <Card className="stat-card" sx={{ textAlign: "center", py: 3 }}>
-              <CardContent>
-                <Typography
-                  variant="h3"
-                  component="div"
-                  className="stat-number"
-                  sx={{ fontWeight: "bold", color: "primary.main" }}
-                >
-                  {stat.number}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  className="stat-label"
-                >
-                  {stat.label}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box>
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          {statsData.map((stat, index) => (
+            <Grid key={index} size={{ xs: 6, md: 3 }}>
+              <StatCard 
+                number={stat.number} 
+                label={stat.label} 
+                onEdit={() => handleEditStats(stat, index)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Timeline Section */}
-      <Paper elevation={2} sx={{ p: 4, mb: 6 }}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ textAlign: "center", mb: 4 }}
-        >
-          Hitos Importantes
-        </Typography>
+      <Paper elevation={2} sx={{ p: 4, mb: 6, position: 'relative' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography
+            variant="h4"
+            gutterBottom
+            sx={{ textAlign: "center", mb: 0 }}
+          >
+            Hitos Importantes
+          </Typography>
+          {isAuthenticated && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddTimelineItem}
+              size="small"
+            >
+              Agregar Hito
+            </Button>
+          )}
+        </Box>
         <Timeline position="alternate">
-          {timelineData.map((item, index) => (
+          {timelineData.map((item: any, index) => (
             <TimelineItem key={index}>
               <TimelineSeparator>
                 <TimelineConnector />
                 <TimelineDot color="primary" className="timeline-dot">
-                  <item.icon />
+                  {(item.icon && iconMap[item.icon]) || <WaterDropIcon />}
                 </TimelineDot>
                 <TimelineConnector />
               </TimelineSeparator>
               <TimelineContent sx={{ py: "12px", px: 2 }}>
-                <Paper elevation={1} sx={{ p: 2, backgroundColor: "grey.50" }}>
-                  <Typography
-                    variant="caption"
-                    color="primary"
-                    sx={{ fontWeight: "bold", display: "block", mb: 1 }}
+                <Box sx={{ position: 'relative' }}>
+                  <Paper 
+                    elevation={1} 
+                    sx={{ 
+                      p: 2, 
+                      backgroundColor: "grey.50",
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'grey.100',
+                      }
+                    }}
+                    onClick={() => handleTimelineItemClick(item)}
                   >
-                    {item.year}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    component="h3"
-                    sx={{ fontWeight: "bold" }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {item.description}
-                  </Typography>
-                </Paper>
+                    {item.image && (
+                      <Box
+                        component="img"
+                        src={getImageUrl(item.image) || ''}
+                        alt={item.title}
+                        loading="lazy"
+                        decoding="async"
+                        sx={{
+                          width: '100%',
+                          height: '150px',
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          mb: 2
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant="caption"
+                      color="primary"
+                      sx={{ fontWeight: "bold", display: "block", mb: 1 }}
+                    >
+                      {item.year}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      component="h3"
+                      sx={{ fontWeight: "bold" }}
+                    >
+                      {item.title}
+                    </Typography>
+                  </Paper>
+                  {isAuthenticated && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        display: 'flex',
+                        gap: 0.5,
+                      }}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditTimelineItem(item);
+                        }}
+                        sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTimelineItem(String(item.id));
+                        }}
+                        sx={{ backgroundColor: 'error.main', color: 'error.contrastText' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
               </TimelineContent>
             </TimelineItem>
           ))}
@@ -146,7 +466,7 @@ export default function NuestraHistoria() {
 
       {/* Mission and Vision */}
       <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ position: 'relative' }}>
           <Card className="mission-card" sx={{ height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <Typography
@@ -154,18 +474,24 @@ export default function NuestraHistoria() {
                 gutterBottom
                 sx={{ color: "primary.main", textAlign: "center" }}
               >
-                Misión
+                {mission?.title}
               </Typography>
               <Typography variant="body1" paragraph>
-                Proporcionar agua potable de calidad a todos los habitantes de
-                la comunidad de Suerre, garantizando un servicio eficiente,
-                sostenible y a precios accesibles, contribuyendo al mejoramiento
-                de la calidad de vida de nuestros usuarios.
+                {mission?.content}
               </Typography>
             </CardContent>
           </Card>
+          {isAuthenticated && (
+            <IconButton
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={handleEditMission}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ position: 'relative' }}>
           <Card className="vision-card" sx={{ height: "100%" }}>
             <CardContent sx={{ p: 3 }}>
               <Typography
@@ -173,16 +499,22 @@ export default function NuestraHistoria() {
                 gutterBottom
                 sx={{ color: "primary.main", textAlign: "center" }}
               >
-                Visión
+                {vision?.title}
               </Typography>
               <Typography variant="body1" paragraph>
-                Ser una ASADA modelo en la gestión sostenible del recurso
-                hídrico, reconocida por su excelencia en el servicio, su
-                compromiso con el medio ambiente y su contribución al desarrollo
-                comunitario.
+                {vision?.content}
               </Typography>
             </CardContent>
           </Card>
+          {isAuthenticated && (
+            <IconButton
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              onClick={handleEditVision}
+              color="primary"
+            >
+              <EditIcon />
+            </IconButton>
+          )}
         </Grid>
       </Grid>
     </Container>
