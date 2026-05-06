@@ -9,6 +9,7 @@ import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
+import Typography from '@mui/material/Typography';
 import { ReactComponent as LogoAsada } from '../../assets/asada-suerre-logo.svg';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ImageCarousel from '../ImageCarousel/ImageCarousel';
@@ -19,7 +20,7 @@ import { useTranslation } from '../../context/TranslationContext';
 import { LoginDialogContent } from '../LoginDialog';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
 import './AppBar.scss';
-import { KeyboardArrowUp, Menu, CloseRounded } from '@mui/icons-material';
+import { KeyboardArrowUp, Menu, CloseRounded, Download, IosShare } from '@mui/icons-material';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   display: 'flex',
@@ -39,12 +40,73 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 export default function AppBarComponent() {
   const [open, setOpen] = React.useState(false);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+  const [isInstalled, setIsInstalled] = React.useState(false);
+  const [isIOS, setIsIOS] = React.useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const { openDialog, closeDialog } = useDialog();
   const { t } = useTranslation();
   const [carouselImages, setCarouselImages] = React.useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Check if app is already installed
+  React.useEffect(() => {
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    setIsInstalled(isInStandaloneMode);
+  }, []);
+
+  // Detect iOS
+  React.useEffect(() => {
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(isIOSDevice);
+  }, []);
+
+  // Handle PWA install prompt
+  React.useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (isIOS) {
+      // Show iOS installation instructions
+      openDialog({
+        title: t.pwa.install,
+        content: (
+          <Box sx={{ p: 2 }}>
+            <Typography sx={{ mb: 2 }}>
+              {t.pwa.instructions}
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              1. {t.pwa.step1} <IosShare sx={{ verticalAlign: 'middle', fontSize: '1rem' }} />
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              2. {t.pwa.step2}
+            </Typography>
+            <Typography>
+              3. {t.pwa.step3}
+            </Typography>
+          </Box>
+        ),
+        maxWidth: 'sm',
+      });
+    } else if (deferredPrompt) {
+      // Trigger Android PWA install
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          setIsInstalled(true);
+        }
+        setDeferredPrompt(null);
+      });
+    }
+  };
 
   const toggleDrawer = (newOpen: boolean) => () => {
     if (!isCarouselCollapsed) {
@@ -334,7 +396,16 @@ export default function AppBarComponent() {
               {isAuthenticated ? `${t.auth.logout} (${user?.username})` : 'Portal Administrativo'}
             </Button>
           </Box>
-          <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1 }}>
+          <Box sx={{ display: { xs: "flex", md: "none" }, gap: 1}}>
+            {!isInstalled && (deferredPrompt || isIOS) && (
+              <IconButton
+                aria-label="Install app"
+                onClick={handleInstallClick}
+                sx={{ border: "1px solid black", position: 'absolute', left: '1rem' }}
+              >
+                <Download />
+              </IconButton>
+            )}
             <Box
               component={LogoAsada}
               sx={{

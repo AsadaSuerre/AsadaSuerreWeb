@@ -167,6 +167,15 @@ export const es = {
     rotateToPortrait: 'Por favor, gira tu dispositivo a modo vertical',
     rotateToPortraitBestExperience: 'Por favor, gira tu dispositivo a modo vertical para la mejor experiencia',
   },
+
+  // PWA Installation
+  pwa: {
+    install: 'Instalar App',
+    instructions: 'Para instalar la app en iOS:',
+    step1: 'Toque el botón Compartir',
+    step2: 'Desplácese hacia abajo y toque "Agregar al inicio"',
+    step3: 'Toque "Agregar" para confirmar',
+  },
 };
 
 export type Translations = typeof es;
