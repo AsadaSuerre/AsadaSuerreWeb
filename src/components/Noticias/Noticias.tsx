@@ -62,6 +62,7 @@ export default function Noticias() {
   };
 
   const handleDelete = async (id: string) => {
+    // eslint-disable-next-line no-restricted-globals
     if (!confirm('¿Estás seguro de eliminar esta noticia?')) return;
     
     try {
