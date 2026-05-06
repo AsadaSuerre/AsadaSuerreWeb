@@ -218,7 +218,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
     const card = await env.asada_suerre_db.prepare(`
       SELECT 
         c.id as card_id, c.title, c.description, c.date, c.image, c.subtitle, c.tag, c.badge,
-        c.icon, c.url, c.google_maps_url as google_maps_url, c.variant,
+        c.icon, c.url, c.google_maps_url as google_maps_url, c.variant, c.sort_order,
         ca.id as author_id, ca.name as author_name, ca.avatar as author_avatar,
         ci.id as item_id, ci.item as item_text
       FROM cards c
@@ -239,7 +239,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
   let query = `
     SELECT 
       c.id as card_id, c.title, c.description, c.date, c.image, c.subtitle, c.tag, c.badge,
-      c.icon, c.url, c.google_maps_url as google_maps_url, c.variant,
+      c.icon, c.url, c.google_maps_url as google_maps_url, c.variant, c.sort_order,
       ca.id as author_id, ca.name as author_name, ca.avatar as author_avatar,
       ci.id as item_id, ci.item as item_text
     FROM cards c
@@ -254,7 +254,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
     params.push(variant);
   }
 
-  query += ' ORDER BY c.id DESC';
+  query += ' ORDER BY c.sort_order ASC, c.id DESC';
 
   const stmt = env.asada_suerre_db.prepare(query);
   const result = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
@@ -271,18 +271,18 @@ async function getCards(request: Request, env: Env): Promise<Response> {
 async function createCard(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
 
-  if (!body || !body.title || !body.description || !body.variant) {
-    return errorResponse('Faltan campos requeridos: título, descripción, variante');
+  if (!body || !body.title || !body.variant) {
+    return errorResponse('Faltan campos requeridos: título, variante');
   }
 
   try {
     // Insert card
     const cardResult = await env.asada_suerre_db.prepare(`
-      INSERT INTO cards (title, description, date, image, subtitle, tag, badge, icon, url, google_maps_url, variant)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO cards (title, description, date, image, subtitle, tag, badge, icon, url, google_maps_url, variant, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.title,
-      body.description,
+      body.description || '',
       body.date || null,
       body.image || null,
       body.subtitle || null,
@@ -291,7 +291,8 @@ async function createCard(request: Request, env: Env): Promise<Response> {
       body.icon || null,
       body.url || null,
       body.googleMapsUrl || null,
-      body.variant
+      body.variant,
+      body.sort_order || 0
     ).run();
 
     const cardId = cardResult.meta.last_row_id;
@@ -389,6 +390,10 @@ async function updateCard(request: Request, env: Env, id: string): Promise<Respo
       updateFields.push('variant = ?');
       params.push(body.variant);
     }
+    if (body.sort_order !== undefined) {
+      updateFields.push('sort_order = ?');
+      params.push(body.sort_order);
+    }
 
     if (updateFields.length === 0) {
       return errorResponse('No hay campos para actualizar');
@@ -445,6 +450,35 @@ async function deleteCard(request: Request, env: Env, id: string): Promise<Respo
     await env.asada_suerre_db.prepare('DELETE FROM cards WHERE id = ?').bind(id).run();
 
     return jsonResponse({ success: true, message: 'Card deleted successfully' });
+  } catch (error: any) {
+    return errorResponse(error.message, 500);
+  }
+}
+
+// POST /cards/reorder
+async function reorderCards(request: Request, env: Env): Promise<Response> {
+  const auth = await authenticateRequest(request, env);
+  if (!auth) {
+    return errorResponse('No autorizado', 401);
+  }
+
+  const body = await parseBody(request);
+
+  if (!body || !body.items || !Array.isArray(body.items)) {
+    return errorResponse('Missing items array', 400);
+  }
+
+  try {
+    for (const item of body.items) {
+      if (!item.id || item.sort_order === undefined) {
+        continue;
+      }
+      await env.asada_suerre_db.prepare('UPDATE cards SET sort_order = ? WHERE id = ?')
+        .bind(item.sort_order, item.id)
+        .run();
+    }
+
+    return jsonResponse({ success: true, message: 'Cards reordered successfully' });
   } catch (error: any) {
     return errorResponse(error.message, 500);
   }
@@ -857,6 +891,9 @@ export default {
     }
     if (path === '/cards' && method === 'POST') {
       return createCard(request, env);
+    }
+    if (path === '/cards/reorder' && method === 'POST') {
+      return reorderCards(request, env);
     }
     if (path.startsWith('/cards/') && method === 'PUT') {
       const id = path.split('/')[2];

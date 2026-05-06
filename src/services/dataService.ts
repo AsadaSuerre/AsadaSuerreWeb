@@ -94,6 +94,7 @@ export interface Card {
   url?: string;
   google_maps_url?: string;
   variant: string;
+  sort_order: number;
   authors: Array<{
     id: number;
     name: string;
@@ -170,7 +171,8 @@ function transformCards(cards: Card[]): any[] {
     items: card.items.map(i => i.item),
     url: card.url,
     googleMapsUrl: card.google_maps_url,
-    variant: card.variant
+    variant: card.variant,
+    sort_order: card.sort_order
   }));
 }
 
@@ -370,6 +372,13 @@ export const DataService = {
   deleteCard: async (id: string) => {
     return apiFetch(`/cards/${id}`, {
       method: 'DELETE',
+    }, true);
+  },
+
+  reorderCards: async (items: { id: number; sort_order: number }[]) => {
+    return apiFetch('/cards/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
     }, true);
   },
 
