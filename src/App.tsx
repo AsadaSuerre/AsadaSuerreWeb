@@ -27,7 +27,7 @@ function AppContent() {
         <LandscapeWarning />
         <ScrollToTop />
         <AppBar />
-        <Box sx={{ minHeight: "calc(100vh - 250px)", my: { xs: 18, md: 20 }, }}>
+        <Box sx={{ minHeight: "calc(100dvh - 250px)", my: { xs: 18, md: 20 }, }}>
           <Routes>
             <Route path="/" element={<></>} />
             <Route path="/noticias" element={<Noticias />} />

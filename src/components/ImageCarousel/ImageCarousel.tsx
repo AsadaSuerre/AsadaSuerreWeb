@@ -32,7 +32,7 @@ export interface ImageCarouselProps {
 }
 
 const defaultSx = {
-  height: { xs: '75vh', md: '80vh' },
+  height: { xs: '75dvh', md: '80dvh' },
 };
 
 const collapsedSx = {
@@ -41,7 +41,7 @@ const collapsedSx = {
 
 const swiperStyle = {
   width: '100%',
-  height: '80vh',
+  height: '80dvh',
 };
 
 function ImageCarousel({ images, autoPlay = true, interval = 4000, sx, collapsed = false, showEditControls = false, onEdit, onDelete, onAdd, currentPath }: ImageCarouselProps) {

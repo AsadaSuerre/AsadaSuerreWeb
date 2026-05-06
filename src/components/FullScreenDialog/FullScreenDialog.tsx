@@ -88,7 +88,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           display: 'flex',
           flexDirection: isMd ? 'row' : 'column',
           overflow: 'hidden',
-          height: isMd ? '66vh' : '100vh',
+          height: isMd ? '66dvh' : '100dvh',
         }
       }}
     >
@@ -99,7 +99,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
               ? (isImageExpanded ? '100%' : '50%') 
               : '100%',
             height: isXs
-              ? (isImageExpanded ? '100vh' : 'auto')
+              ? (isImageExpanded ? '100dvh' : 'auto')
               : 'auto',
             position: 'relative',
             overflow: 'hidden',
@@ -148,7 +148,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           display: isXs && isImageExpanded ? 'none' : 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          height: isMd ? '66vh' : 'auto',
+          height: isMd ? '66dvh' : 'auto',
         }}
       >
         {title && (
