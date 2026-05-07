@@ -169,7 +169,7 @@ const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           >
             <Box sx={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
               {title}
-              {icon && (
+              {icon && (!isXs || title.length <= 30) && (
                 <Box sx={{ fontSize: '1.5rem' }}>
                   {iconMap[icon] || null}
                 </Box>
