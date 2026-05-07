@@ -131,6 +131,24 @@ async function downloadFile(fileUrl: string, filename: string): Promise<void> {
 // Helper function to format date in user-friendly format
 function formatDate(dateString: string): string {
   try {
+    // Parse DD/MM/YYYY format
+    const parts = dateString.includes('-') ? dateString.split('-') : dateString.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[2], 10);
+      const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-indexed
+      const year = parseInt(parts[0], 10);
+      const date = new Date(year, month, day);
+      
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+    }
+    
+    // Fallback to standard Date parsing
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
     

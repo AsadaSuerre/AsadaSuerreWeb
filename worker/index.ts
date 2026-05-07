@@ -225,6 +225,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
       LEFT JOIN card_authors ca ON c.id = ca.card_id
       LEFT JOIN card_items ci ON c.id = ci.card_id
       WHERE c.id = ?
+      ORDER BY ci.id ASC
     `).bind(id).all();
 
     if (!card.results || card.results.length === 0) {
@@ -254,7 +255,7 @@ async function getCards(request: Request, env: Env): Promise<Response> {
     params.push(variant);
   }
 
-  query += ' ORDER BY c.sort_order ASC, c.id DESC';
+  query += ' ORDER BY c.sort_order ASC, c.id DESC, ci.id ASC';
 
   const stmt = env.asada_suerre_db.prepare(query);
   const result = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
@@ -658,8 +659,8 @@ async function createTimelineItem(request: Request, env: Env): Promise<Response>
 
   const body = await parseBody(request);
 
-  if (!body || !body.year || !body.title || !body.description) {
-    return errorResponse('Faltan campos requeridos: año, título, descripción');
+  if (!body || !body.year || !body.title) {
+    return errorResponse('Faltan campos requeridos: año, título');
   }
 
   try {
@@ -669,7 +670,7 @@ async function createTimelineItem(request: Request, env: Env): Promise<Response>
     `).bind(
       body.year,
       body.title,
-      body.description,
+      body.description || '',
       body.icon || null,
       body.image || null,
       body.sort_order || 0
