@@ -536,7 +536,7 @@ const GenericCard: React.FC<GenericCardProps> = ({
         tabIndex={tabIndex}
       >
         {/* Card Media/Image */}
-        {data.image && !hideImage && variant === 'news' && (
+        {data.image && !hideImage && (variant === 'news' || variant === 'governance') && (
         <CardMedia
           component="img"
           alt={data.title}
