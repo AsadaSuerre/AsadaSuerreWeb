@@ -11,8 +11,6 @@ import { useTranslation } from '../../context/TranslationContext';
 import Loading from '../Loading/Loading';
 import AddIcon from '@mui/icons-material/Add';
 import AddEditDialogContent from '../AddEditDialog/AddEditDialogContent';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
 import './Noticias.scss';
 
 export default function Noticias() {
@@ -127,42 +125,6 @@ export default function Noticias() {
     });
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination || !isAuthenticated) return;
-
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
-
-    const reorderedItems = Array.from(filteredNews);
-    const [reorderedItem] = reorderedItems.splice(sourceIndex, 1);
-    reorderedItems.splice(destinationIndex, 0, reorderedItem);
-
-    setCardsData((prev: any[]) => {
-      const updated = prev.map((card: any) => {
-        if (card.variant !== 'news') return card;
-        const newIndex = reorderedItems.findIndex((item: any) => item.id === card.id);
-        if (newIndex !== -1) {
-          return { ...card, sort_order: newIndex };
-        }
-        return card;
-      });
-      return updated;
-    });
-
-    const sortUpdateItems = reorderedItems.map((item: any, index: number) => ({
-      id: Number(item.id),
-      sort_order: index
-    }));
-
-    try {
-      await DataService.reorderCards(sortUpdateItems);
-    } catch (error) {
-      console.error('Error reordering:', error);
-      const revertedData = await DataService.getCardsData();
-      setCardsData(revertedData);
-    }
-  };
-
   // Filter for news variant and apply category/search filters
   const filteredNews = React.useMemo(() => {
     let filtered = cardsData.filter((item: any) => item.variant === 'news');
@@ -176,6 +138,12 @@ export default function Noticias() {
         item.description.toLowerCase().includes(query)
       );
     }
+    // Sort by date descending (newest first)
+    filtered.sort((a: any, b: any) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    });
     return filtered;
   }, [cardsData, selectedCategory, searchQuery]);
 
@@ -262,8 +230,7 @@ export default function Noticias() {
           <Search value={searchQuery} onChange={handleSearchChange} />
         </Box>
       </Box>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Grid container spacing={2} columns={12}>
+      <Grid container spacing={2} columns={12}>
           {isAuthenticated && (
             <Grid size={{ xs: 12, md: 6 }}>
               <GenericCard
@@ -294,62 +261,21 @@ export default function Noticias() {
               />
             </Grid>
           )}
-          <Droppable droppableId="news">
-            {(provided) => (
-              <Box {...provided.droppableProps} ref={provided.innerRef} sx={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
-                {filteredNews.map((news: any, index: number) => (
-                  <Draggable key={news.id} draggableId={String(news.id)} index={index} isDragDisabled={!isAuthenticated}>
-                    {(provided, snapshot) => (
-                      <Box
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        sx={{
-                          ...provided.draggableProps.style,
-                          width: { xs: '100%', md: 'calc(50% - 16px)' },
-                          padding: '8px',
-                          opacity: snapshot.isDragging ? 0.8 : 1,
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        <Box sx={{ position: 'relative' }}>
-                          {isAuthenticated && (
-                            <div
-                              {...provided.dragHandleProps}
-                              style={{
-                                position: 'absolute',
-                                top: 8,
-                                left: 8,
-                                zIndex: 10,
-                                cursor: 'grab',
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                borderRadius: '50%',
-                                padding: 4,
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              }}
-                            >
-                              <DragHandleIcon />
-                            </div>
-                          )}
-                          <GenericCard
-                            data={news}
-                            focused={focusedCardIndex === index}
-                            onFocus={handleFocus}
-                            onBlur={handleBlur}
-                            tabIndex={0}
-                            size="large"
-                            showEditControls={isAuthenticated}
-                            onEdit={() => handleEdit(news)}
-                            onDelete={() => handleDelete(String(news.id))}
-                          />
-                        </Box>
-                      </Box>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </Box>
-            )}
-          </Droppable>
+          {filteredNews.map((news: any, index: number) => (
+            <Grid key={news.id} size={{ xs: 12, md: 6 }}>
+              <GenericCard
+                data={news}
+                focused={focusedCardIndex === index}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                tabIndex={0}
+                size="large"
+                showEditControls={isAuthenticated}
+                onEdit={() => handleEdit(news)}
+                onDelete={() => handleDelete(String(news.id))}
+              />
+            </Grid>
+          ))}
           {filteredNews.length === 0 && !isAuthenticated && (
             <Grid size={{ xs: 12 }}>
               <Box
@@ -365,7 +291,6 @@ export default function Noticias() {
             </Grid>
           )}
         </Grid>
-      </DragDropContext>
     </Container>
   );
 }
