@@ -645,7 +645,7 @@ async function deleteHomeSlide(request: Request, env: Env, id: string): Promise<
 
 // GET /timeline
 async function getTimeline(env: Env): Promise<Response> {
-  const result = await env.asada_suerre_db.prepare('SELECT * FROM timeline_items ORDER BY sort_order').all();
+  const result = await env.asada_suerre_db.prepare('SELECT * FROM timeline_items ORDER BY year ASC').all();
 
   return jsonResponse(result.results || []);
 }
